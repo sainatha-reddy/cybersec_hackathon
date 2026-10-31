@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+build/
+dist/
+
+# Secrets / local config: never commit
+.env
+.env.*
+*.key
+*.pem
+
+# Captures: only the curated samples/ are committed
+*.pcap
+*.pcapng
+!samples/*.pcap
+!samples/*.pcapng
+
+# Generated reports
+reports/
+*.report.json
+*.report.html
+
+# Hackathon brief files (not part of the project)
+*.jpeg
+pdf&rendition=1.pdf
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
