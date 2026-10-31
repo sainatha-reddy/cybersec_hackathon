@@ -40,7 +40,9 @@ class RelayTracker:
         if rec.is_tcp:
             extra = (rec.seq, rec.ack, rec.tcp_flags, rec.window)
         elif rec.dns:
-            extra = ("dns", rec.dns.txid, rec.dns.is_response)
+            # include the answers: two *different* replies to one query are a
+            # forgery race, not one packet seen twice
+            extra = ("dns", rec.dns.txid, rec.dns.is_response, rec.dns.rcode, tuple(a.data for a in rec.dns.answers))
         elif rec.icmp_type is not None:
             extra = ("icmp", rec.icmp_type, rec.icmp_code)
         else:
@@ -52,11 +54,14 @@ class RelayTracker:
         if fp is None:
             return False
         prev = self.recent.get(fp)
-        self.recent.put(fp, (rec.ts, rec.src_mac))
         if prev is None:
+            self.recent.put(fp, (rec.ts, rec.src_mac))
             return False
-        prev_ts, prev_mac = prev
+        prev_ts, prev_mac = prev  # the original sender of this packet
         if prev_mac == rec.src_mac or rec.ts - prev_ts > RELAY_WINDOW:
+            # the original sender sent it again (duplicate ACK, retransmission):
+            # a new transmission, not a relayed copy
+            self.recent.put(fp, (rec.ts, rec.src_mac))
             return False
         st = self.by_mac.get(rec.src_mac)
         if st is None:
