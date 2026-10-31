@@ -340,6 +340,11 @@ def scenario_duplicate_ip(cap: Capture) -> None:
         sport = cap.rng.randint(49152, 65000)
         txid = cap.next_txid()
         cap.add(t, Ether(src=new, dst=GW_MAC) / ip(DESKTOP, GW_IP, False) / UDP(sport=sport, dport=53) / DNS(id=txid, rd=1, qd=DNSQR(qname="example.com")))
+        cap.add(
+            t + 0.012,
+            Ether(src=GW_MAC, dst=new) / ip(GW_IP, DESKTOP, False) / UDP(sport=53, dport=sport)
+            / DNS(id=txid, qr=1, rd=1, ra=1, qd=DNSQR(qname="example.com"), an=[DNSRR(rrname="example.com", rdata=SITES["example.com"], ttl=300)]),
+        )
         isn = cap.rng.randint(1, 2**31)
         cap.add(t + 0.03, Ether(src=new, dst=GW_MAC) / ip(DESKTOP, "93.184.216.34") / TCP(sport=sport + 1, dport=443, flags="S", seq=isn))
         t += cap.rng.uniform(3, 5)
