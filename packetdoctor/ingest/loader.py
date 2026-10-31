@@ -96,7 +96,7 @@ def read_capture(
                     f"Stopped after {limits.max_packets:,} packets (packet limit). Results cover that part only."
                 )
                 break
-            if idx % 1000 == 0 and time.monotonic() - started > limits.timeout_seconds:
+            if idx % 256 == 0 and time.monotonic() - started >= limits.timeout_seconds:
                 stats.timed_out = True
                 stats.warnings.append(
                     f"Analysis stopped after {limits.timeout_seconds:.0f}s time limit at packet {idx:,}."
