@@ -88,16 +88,21 @@ class PortScanDetector(Detector):
                 continue
 
             involved = [p for p in probes if p[1] in v_hits or p[2] in h_hits]
-            completed = 0
+            completed = dead = 0
             for ts, dst, dport, sport, idx, _ in involved:
                 flow = state.flows.flows.get(FlowTable.key(_FakeRec(src, sport, dst, dport)))
                 if flow is not None and flow.data_bytes > 0:
                     completed += 1
+                elif flow is None or flow.synack_ts is None:
+                    dead += 1  # refused (RST) or no answer at all: closed port / no such host
             completion = completed / max(1, len(involved))
+            dead_share = dead / max(1, len(involved))
+            types = Counter(p[5] for p in involved)
+            if completion > 0.5 and set(types) == {"SYN"}:
+                continue  # a busy client whose connections carry real data is not scanning
             t0 = min(p[0] for p in involved)
             t1 = max(p[0] for p in involved)
             duration = max(t1 - t0, 0.001)
-            types = Counter(p[5] for p in involved)
             open_found = {dst: sorted(self.open_ports.get((src, dst), set())) for dst in {p[1] for p in involved}}
             open_found = {d: ports for d, ports in open_found.items() if ports}
             ports_probed = len({p[2] for p in involved})
@@ -121,13 +126,16 @@ class PortScanDetector(Detector):
                     "hosts_probed": hosts_probed,
                     "probes_per_second": round(len(involved) / duration, 1),
                     "completion": round(completion, 3),
+                    "dead_share": round(dead_share, 3),
                     "scan_types": dict(types),
                     "open_ports_found": open_found,
                 },
             )
             if v_hits:
                 worst = max(v_hits.items(), key=lambda kv: kv[1][0])
-                sym.attack_evidence.append(Evidence(f"{worst[1][0]} different ports on {worst[0]} were tried within {window:.0f} seconds", 0.4))
+                n_ports = worst[1][0]
+                weight = 0.55 if n_ports >= 100 else 0.45 if n_ports >= 40 else 0.4
+                sym.attack_evidence.append(Evidence(f"{n_ports} different ports on {worst[0]} were tried within {window:.0f} seconds", weight))
             if h_hits:
                 worst = max(h_hits.items(), key=lambda kv: kv[1][0])
                 sym.attack_evidence.append(Evidence(f"Port {worst[0]} was tried on {worst[1][0]} different devices within {window:.0f} seconds", 0.35))
@@ -135,6 +143,8 @@ class PortScanDetector(Detector):
                 sym.attack_evidence.append(Evidence(f"Only {completion:.0%} of the attempts turned into real conversations: the source was only looking", 0.3))
             else:
                 sym.benign_evidence.append(Evidence(f"{completion:.0%} of the connections carried real data, like a busy but normal application", 0.6))
+            if dead_share >= 0.8:
+                sym.attack_evidence.append(Evidence(f"{dead_share:.0%} of the attempts hit closed ports or devices that do not exist: the source did not know what was there", 0.2))
             if len(involved) / duration > 20:
                 sym.attack_evidence.append(Evidence(f"{len(involved) / duration:.0f} attempts per second, far faster than a person or normal app", 0.2))
             stealth = {k: v for k, v in types.items() if k != "SYN"}

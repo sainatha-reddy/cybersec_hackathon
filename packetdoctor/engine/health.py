@@ -29,7 +29,8 @@ def health_score(incidents: list[dict], capture_duration: float) -> tuple[int, s
     if not incidents:
         summary = "No faults or attacks were found in this capture. The network looks healthy."
     elif attacks:
-        summary = f"{attacks} attack(s) found. Deal with these first: they can explain other symptoms."
+        summary = f"{attacks} attack{'s' if attacks != 1 else ''} found. Deal with {'these' if attacks != 1 else 'it'} first: attacks can explain other symptoms."
     else:
-        summary = f"{len(incidents)} problem(s) found, none of them malicious."
+        n = len(incidents)
+        summary = f"{n} problem{'s' if n != 1 else ''} found, none of them malicious."
     return score, grade, summary

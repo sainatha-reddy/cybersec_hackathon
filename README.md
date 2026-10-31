@@ -18,7 +18,7 @@ PacketDoctor treats a capture the way a doctor treats a patient:
 
 | Step | What PacketDoctor does |
 |---|---|
-| **Symptoms** | 11 detectors written by us read every packet and record specific observations, each tied to packet numbers. |
+| **Symptoms** | 16 detectors written by us read every packet and record specific observations, each tied to packet numbers. |
 | **Diagnosis** | A correlation engine groups symptoms into incidents and works out cause and effect. For example: *"ARP spoofing is the cause; the 30 retransmissions after t=58 s are a consequence, not a separate problem."* |
 | **Verdict** | Every incident is labelled **FAULT**, **ATTACK** or **UNCERTAIN**, with a confidence score and the list of clues for *both* sides. If the clues don't clearly point one way, the incident is marked UNCERTAIN instead of raising a false alarm. |
 | **Prescription** | Beginner-friendly explanation: what happened, why it matters, the likely cause, and numbered steps to fix it. |
@@ -33,6 +33,7 @@ It runs **fully offline**: no cloud, no AI service, no API keys. Captures never 
 - **Telling fault from attack** is a first-class output. Each verdict comes with weighted evidence for and against, and with explicit benign explanations that were checked. Examples: "a backup DHCP server with the same settings", "a router failover", "split-horizon DNS".
 - **Root-cause chains** show *knock-on effects*: rogue DHCP leads to DNS hijacking, a duplicate IP leads to dropped connections, an MTU black hole leads to retransmissions. Fix the root and the rest goes away.
 - **Relay detection** spots a man-in-the-middle *physically*: the same packet appears twice on the wire, re-sent by another device's MAC address within milliseconds.
+- **Measured, not just claimed.** A randomised benchmark of 300 labelled captures (problems with random parameters plus benign look-alikes) scores **305/305 problems found with the correct verdict and 0 false attack verdicts**. Public real-world captures were also tested. See [Evaluation](#evaluation).
 
 ---
 
@@ -42,13 +43,16 @@ It runs **fully offline**: no cloud, no AI service, no API keys. Captures never 
 
 | Finding | How it is detected (our own logic) |
 |---|---|
-| TCP retransmissions | Per-flow relative sequence tracking. Each re-sent segment is classified as *fast* (after 3 duplicate ACKs), *timeout* or *spurious* (already acknowledged). Reported per client/server path only above both a count and a ratio threshold. |
-| TCP resets | *Refused* (SYN answered by RST on the same service, several times) vs *aborted* (RST on an established connection after data). Clients probing many ports are left to the scan detector. |
-| DNS failures | Query/response matching by (client, port, transaction ID). SERVFAIL, REFUSED and unanswered queries per server; NXDOMAIN (typos) is ignored. |
+| TCP retransmissions | Per-flow relative sequence tracking. Each re-sent segment is classified as *fast* (after 3 duplicate ACKs), *timeout*, *spurious* (already acknowledged) or *lost before the capture point* (a sequence gap later filled, which works even when the capture is taken downstream of the loss; quick reordering is told apart). Reported per client/server path only above both a count and a ratio threshold. |
+| TCP resets | *Refused* (SYN answered by RST on the same service, several times) vs *aborted* (the server side resets established connections after data). Client-side resets are normal browser behaviour and are ignored; clients probing many ports are left to the scan detector. |
+| DNS failures | Query/response matching by (client, port, transaction ID). SERVFAIL, REFUSED and unanswered queries per server, judged on the worst 30-second window so a short outage is not diluted; NXDOMAIN (typos) is ignored. |
 | Duplicate IP | Two MAC addresses that both *actively use* one IP (they start their own connections and ARP requests). Forged ARP replies alone don't count. |
 | ARP conflicts | A gratuitous ARP contradicting a live binding, an RFC 5227 probe that gets answered, or one ARP request answered by two MACs. |
 | MTU problems | ICMP "fragmentation needed" or "packet too big", with a check that the sender adapted; plus **PMTU black holes**, where full-size segments are retransmitted again and again while small ones get through. |
 | Unusual delays | TCP handshake and DNS response times compared with the capture's *own* baseline (median + 6×MAD, with an absolute floor), grouped into episodes; plus TCP zero-window stalls. |
+| Unreachable devices | A device, often **the gateway**, that *stops* answering ARP while others keep asking for it; plus ICMP "no route", "blocked", "port closed" and "TTL exceeded" reports grouped by router. |
+| DHCP failures | Devices that keep sending DISCOVER/REQUEST and never get an address (no server, NAKs, pool exhausted). |
+| ARP storms and sweeps | One device sending ARP requests far faster than normal. A router resolving addresses that don't exist counts as benign; an ordinary device walking through the subnet in order (host discovery) counts as suspicious. |
 
 ### Attacks detected
 
@@ -58,10 +62,13 @@ It runs **fully offline**: no cloud, no AI service, no API keys. Captures never 
 | ARP spoofing / MITM | A MAC claiming an IP first owned by another MAC, unrequested replies, a clockwork timing pattern, one MAC holding several IPs, the gateway being targeted, and **observed traffic relaying**. |
 | DNS hijacking | Two disagreeing answers to the same query (a race), answers "from" the resolver's IP but sent by a different MAC, public names answered with local addresses, very low TTLs, and a non-gateway local resolver pointing names at itself. |
 | Rogue DHCP | More than one DHCP server. The real one is identified from the gateway, lease history and first sighting. Any other server is checked for a different gateway or DNS server, pointing clients at itself, answering faster, and clients accepting its offer. |
+| DHCP starvation | Dozens of "new devices" requesting addresses within a minute, whose claimed hardware addresses don't match the frames' real sender. |
+| Fragmentation attacks | IP fragments of one packet that overlap (teardrop-style crash or IDS evasion) or a first fragment too small to hold a TCP header. Normal fragmentation is not flagged. |
 
 ### Interfaces
 
 - **CLI** with colour output: summary table, a panel per incident, evidence packets, `--json` and `--html` export.
+- **Wireshark hand-off.** Every incident carries two display filters: one for the traffic pattern, and one (`frame.number in {...}`) selecting exactly the cited packets. `--export-evidence DIR` writes each incident's packets to its own small `.pcap`. Only the filter text is generated; Wireshark is never run or required.
 - **Local web dashboard**: drag-and-drop upload, health gauge, interactive timeline (click a bar to jump to its explanation), incident cards with clue meters, cause-and-effect chain, evidence tables, filters, and downloads.
 - **Standalone HTML report**: one offline file you can email. It contains a strict Content Security Policy and loads nothing from the network.
 - **Anonymise mode** (`--anonymize` or a checkbox): IPs and MACs are replaced by keyed-hash pseudonyms before anything is shown or saved.
@@ -98,6 +105,9 @@ packetdoctor analyze samples/rogue_dhcp.pcap --json report.json --html report.ht
 # share safely: addresses pseudonymised
 packetdoctor analyze samples/arp_spoofing.pcap --anonymize
 
+# one .pcap per incident with just the evidence packets, for Wireshark
+packetdoctor analyze samples/mixed_fault_and_attack.pcap --export-evidence evidence/
+
 # web dashboard, then open http://127.0.0.1:8000
 packetdoctor serve
 ```
@@ -110,7 +120,7 @@ packetdoctor serve
 pytest
 ```
 
-105 tests cover every detector on every sample, benign look-alikes (backup DHCP server, router failover, busy client, split-horizon DNS), the verdict and correlation logic, the CLI, the web API and its security headers, fuzzed and truncated captures, an address-flood capture against the memory limits, hostile strings in packets, and a scan for committed secrets.
+123 tests cover every detector on every sample, benign look-alikes (backup DHCP server, router failover, busy client, split-horizon DNS, client-side resets, legitimate fragmentation), loss seen from either side of a link, clock jumps, the verdict and correlation logic, a smoke run of the accuracy benchmark, the CLI, the web API and its security headers, fuzzed and truncated captures, an address-flood capture against the memory limits, hostile strings in packets, and a scan for committed secrets.
 
 ---
 
@@ -132,6 +142,32 @@ All samples are **synthetic**. `samples/generate.py` builds them in memory with 
 | `dns_hijack.pcap` | Forged DNS answers racing the real resolver | ATTACK: DNS hijacking (bank and mail sites redirected) |
 | `rogue_dhcp.pcap` | Rogue DHCP server handing out itself as gateway and DNS | ATTACK: rogue DHCP → DNS hijacking (consequence) |
 | `mixed_fault_and_attack.pcap` | **Showcase:** port scan, DNS outage and ARP-spoofing MITM with packet loss | 2× ATTACK + 1× FAULT, with the MITM's retransmissions linked to the attack |
+| `gateway_down.pcap` | The router crashes half-way | FAULT: gateway stopped answering → DNS outage + DHCP failure (consequences) |
+| `dhcp_starvation.pcap` | 150 forged clients drain the address pool; a visitor can't join | ATTACK: DHCP starvation → DHCP failure (consequence) |
+| `arp_sweep.pcap` | A laptop ARP-scans the whole subnet slowly | **UNCERTAIN**: could be an inventory tool or reconnaissance, so a person should check |
+| `ip_fragment_attack.pcap` | Overlapping (teardrop) and tiny fragments, next to legitimate fragmentation | ATTACK: fragmentation attack (the legitimate fragments are not flagged) |
+
+---
+
+## Evaluation
+
+**Randomised benchmark** (`python benchmark/run.py`, full results in [docs/EVALUATION.md](docs/EVALUATION.md)). It runs 300 fresh 120-second captures. Each one has background traffic at a random rate, 0–2 problems with random parameters (loss rate, scan speed, poisoning interval, outage length, flood size, ...), and 0–3 benign look-alikes: a busy client, a backup DHCP server, a router failover, split-horizon DNS, CDN answer rotation, duplicate DNS answers, legitimate fragmentation, and browser resets.
+
+| Metric | Result |
+|---|---|
+| Problems found with the correct verdict | **305 / 305** |
+| Captures with a false ATTACK verdict | **0 / 300** |
+| Problem-free captures reported completely clean | 66 / 80 (the other 14 contain the router-failover look-alike, correctly reported as an address-conflict *fault*) |
+
+The benchmark earned its keep: the first trial scored 94% and exposed slow port scans being marked UNCERTAIN, short DNS outages being diluted, and noisy busy-client reports. All three were fixed. These are synthetic captures, so the numbers measure robustness to parameters, timing, noise and combinations, not every quirk of real networks.
+
+**Real captures.** The tool was also run on public Wireshark sample captures: an ARP storm, the teardrop attack, DHCP, DNS, TCP ECN, SMB, and an ISP router boot. That surfaced four real-world issues, all now fixed:
+- **Clock jumps:** a device booting without a clock stamps packets near 1970.
+- **DNS records without data:** SOA records have no plain `rdata` field.
+- **False alarms from client resets:** browsers routinely reset their own connections.
+- **A misleading label:** "Rogue DHCP" was shown next to a benign verdict.
+
+Results after the fixes: the router's ARP storm is correctly a FAULT, the teardrop capture is an ATTACK, the router boot shows only a benign "extra DHCP server", and the 6 normal captures produce no false alarms. These files aren't redistributed because their licences are unclear.
 
 ---
 
@@ -142,8 +178,8 @@ flowchart LR
     A[pcap / pcapng] --> B[Safe loader<br/>magic bytes, size,<br/>time and packet caps]
     B --> C[Decoder<br/>header-only PacketRecord]
     C --> D[Network state<br/>flows, DNS transactions,<br/>ARP/host table, relay tracker]
-    D --> E1[7 fault detectors]
-    D --> E2[4 attack detectors]
+    D --> E1[10 fault detectors]
+    D --> E2[5 attack detectors]
     E1 --> F[Correlation engine<br/>same-problem merges,<br/>cause-and-effect rules]
     E2 --> F
     F --> G[Verdict scorer<br/>noisy-OR of weighted clues<br/>FAULT / ATTACK / UNCERTAIN]
@@ -163,14 +199,16 @@ flowchart LR
 packetdoctor/
   ingest/      loader.py (safe reading), decoder.py (PacketRecord)
   state/       flows.py, dns.py, hosts.py, relay.py, lru.py
-  detectors/   faults/ (7 detectors), attacks/ (4 detectors), base.py
+  detectors/   faults/ (10 detectors), attacks/ (5 detectors), base.py
   engine/      correlate.py, verdict.py, health.py, analyze.py
-  explain/     knowledge.py (plain-language explanations and fixes)
-  report/      html.py (standalone report), anonymize.py
+  explain/     knowledge.py (plain-language explanations and fixes), wireshark.py (display filters)
+  report/      html.py (standalone report), anonymize.py, export.py (evidence pcaps)
   web/         app.py (FastAPI), static/ (renderer, styles), templates/
   cli.py
-samples/       generate.py + 13 sample captures
-tests/         105 tests
+samples/       generate.py + 17 sample captures
+benchmark/     run.py (randomised accuracy benchmark)
+docs/          EVALUATION.md
+tests/         123 tests
 ```
 
 ---
@@ -191,7 +229,8 @@ The full details are in [SECURITY.md](SECURITY.md). In short:
 ## Limitations and honest notes
 
 - **Throughput** is about 4–5k packets per second on a laptop (Scapy's dissector is the bottleneck), so a 100k-packet capture takes roughly 25 s. The time limit and packet limit are configurable.
-- **Coverage.** Detection is IPv4-focused. IPv6 TCP/UDP traffic and ICMPv6 "packet too big" are handled, but NDP spoofing is not yet detected.
+- **Coverage.** Detection is IPv4-focused. IPv6 TCP/UDP traffic and ICMPv6 "packet too big" are handled, but NDP spoofing is not yet detected. SYN floods and brute-force logins are not yet covered.
+- **Clue weights** were tuned by hand. The benchmark shows they generalise across randomised synthetic scenarios, but they haven't been calibrated on large real-world datasets.
 - **Encrypted traffic.** Application-layer problems inside encrypted traffic (TLS/QUIC) are out of scope; the tool diagnoses the network layers below.
 - **Vantage point matters.** Relay detection needs a capture point (mirror/SPAN port or the victim itself) that sees both legs of the relayed traffic.
 - **Thresholds.** These live in `packetdoctor/config.py` and are tuned for small networks.

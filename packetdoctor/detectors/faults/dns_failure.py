@@ -6,6 +6,20 @@ from ...models import Category, Evidence, Symptom
 from ..base import Detector, severity_from_ratio
 
 SERVFAIL, NXDOMAIN, REFUSED = 2, 3, 5
+WINDOW = 30.0  # an outage is judged on its worst 30 seconds, not diluted by the rest of the capture
+
+
+def _worst_window_ratio(events: list[tuple[float, bool]], window: float, min_failures: int) -> float:
+    """Highest failure share over any window holding at least ``min_failures`` failures."""
+    best, lo, fails = 0.0, 0, 0
+    for hi, (ts, failed) in enumerate(events):
+        fails += failed
+        while ts - events[lo][0] > window:
+            fails -= events[lo][1]
+            lo += 1
+        if fails >= min_failures:
+            best = max(best, fails / (hi - lo + 1))
+    return best
 
 
 class DnsFailureDetector(Detector):
@@ -18,14 +32,16 @@ class DnsFailureDetector(Detector):
     def finalize(self, state):
         end = state.last_ts or 0
         per_server = defaultdict(
-            lambda: {"total": 0, "servfail": 0, "refused": 0, "timeout": 0, "nxdomain": 0, "ids": [], "names": Counter(), "clients": set(), "t": []}
+            lambda: {"total": 0, "servfail": 0, "refused": 0, "timeout": 0, "nxdomain": 0, "ids": [], "names": Counter(), "clients": set(), "t": [], "events": []}
         )
         for q in state.dns.all_queries():
             s = per_server[q.server]
             first = q.first
+            if first is None and end - q.ts < self.t.dns_timeout_s:
+                continue  # capture ended before an answer could arrive
+            failed = first is None or first.rcode in (SERVFAIL, REFUSED)
+            s["events"].append((q.ts, failed))
             if first is None:
-                if end - q.ts < self.t.dns_timeout_s:
-                    continue  # capture ended before an answer could arrive
                 s["total"] += 1
                 s["timeout"] += 1
                 s["ids"].append(q.idx)
@@ -50,7 +66,7 @@ class DnsFailureDetector(Detector):
             failures = s["servfail"] + s["refused"] + s["timeout"]
             if failures < self.t.dns_failure_min:
                 continue
-            ratio = failures / max(1, s["total"])
+            ratio = _worst_window_ratio(sorted(s["events"]), WINDOW, self.t.dns_failure_min)
             if ratio < self.t.dns_failure_ratio:
                 continue
             parts = []

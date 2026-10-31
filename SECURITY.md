@@ -21,6 +21,7 @@ PacketDoctor reads files that may come from anywhere, and they may be deliberate
 | Information disclosure in errors | User-facing `CaptureError` messages contain only the file's base name; temp names are never echoed; API docs/OpenAPI disabled | `loader`, `web/app.py` | `test_error_message_does_not_leak_full_path`, `test_no_api_docs_exposed` |
 | Sharing reports leaks addresses | `--anonymize`: IPs/MACs replaced by HMAC-SHA256 pseudonyms with a random per-run key (consistent within a report, not reversible, not linkable across reports) | `report/anonymize.py` | `test_anonymize_removes_addresses`, `test_upload_anonymized` |
 | Sensitive payloads (passwords, cookies) | Only header fields are kept; payload bytes are never stored, shown or exported | `models.PacketRecord`, decoder | by design |
+| Evidence export leaking payloads | `--export-evidence` copies only the cited packets, warns that they contain original bytes, writes them owner-readable, and refuses to run together with `--anonymize` | `report/export.py`, `cli.analyze` | `test_cli_refuses_export_with_anonymize` |
 | Hard-coded secrets | None exist; `.gitignore` excludes `.env`, keys and stray captures; repository scanned by a test | `.gitignore` | `test_no_secrets_committed` |
 | Vulnerable dependencies | Versions pinned in `requirements.txt`; audited with `pip-audit`, no known vulnerabilities at submission time | `requirements.txt` | `pip-audit -r requirements.txt` |
 

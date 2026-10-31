@@ -150,7 +150,7 @@ def dns_lookup(
         return t
     if answers is None:
         answers = [SITES[name]] if (rcode == 0 and name in SITES) else []
-    an = [DNSRR(rrname=name, rdata=a, ttl=ttl) for a in answers] or None
+    an = [DNSRR(rrname=name, rdata=a, ttl=ttl) for a in answers]
     cap.add(
         t + rtt,
         eth(server, client) / ip(server, client, df=False) / UDP(sport=53, dport=sport)
