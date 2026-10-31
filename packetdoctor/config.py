@@ -49,6 +49,14 @@ class Thresholds:
     arp_flood_rate: float = 0.2  # unsolicited replies per second
     # Duplicate IP
     dup_ip_min_packets: int = 3
+    # ARP storm / sweep
+    arp_storm_min_requests: int = 100  # requests from one device within 10 s
+    arp_sweep_min_targets: int = 30
+    # Unreachable devices
+    unreachable_min_requests: int = 5  # ARP attempts with no answer at all
+    # DHCP
+    dhcp_fail_min_requests: int = 3
+    dhcp_starvation_min_macs: int = 20  # distinct client MACs in 60 s
 
 
 @dataclass(frozen=True)

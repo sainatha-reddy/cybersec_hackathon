@@ -69,6 +69,13 @@ def decode(idx: int, pkt) -> PacketRecord:
         rec.df = bool(int(ip.flags) & 0x2)
         ip_hdr_len = int(ip.ihl or 5) * 4
         ip_total = int(ip.len) if ip.len is not None else None
+        rec.ip_id = int(ip.id)
+        rec.frag_offset = int(ip.frag) * 8
+        rec.more_fragments = bool(int(ip.flags) & 0x1)
+        if rec.frag_offset or rec.more_fragments:
+            rec.frag_len = max(0, (ip_total or 0) - ip_hdr_len)
+            if rec.frag_offset:
+                return rec  # later fragments carry no transport header
     elif pkt.haslayer(IPv6):
         ip6 = pkt[IPv6]
         rec.ip_version = 6
@@ -148,7 +155,9 @@ def _dns(pkt) -> DnsInfo | None:
         qtype = int(getattr(first, "qtype", 0) or 0)
     answers: list[DnsAnswer] = []
     for rr in list(dns.an or [])[:32]:
-        data = rr.rdata
+        data = getattr(rr, "rdata", None)  # SOA/MX/SRV/... records have no plain rdata
+        if data is None:
+            continue
         if isinstance(data, (list, tuple)):  # TXT records
             data = b" ".join(x if isinstance(x, bytes) else str(x).encode() for x in data)
         rtype = int(getattr(rr, "type", 0) or 0)

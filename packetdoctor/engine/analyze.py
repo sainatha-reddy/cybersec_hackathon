@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from .. import __version__
 from ..config import DEFAULT_SETTINGS, Settings
 from ..explain import FRIENDLY_KIND, Namer, explain
+from ..explain.knowledge import BENIGN_KIND, benign_title
+from ..explain.wireshark import exact_filter, focused_filter
 from ..ingest import read_capture
 from ..models import Category, IngestStats, Symptom, Verdict
 from ..pipeline import detect
@@ -26,7 +28,7 @@ def analyze(path: str | os.PathLike, settings: Settings = DEFAULT_SETTINGS, anon
     gw_ip, gw_mac = state.hosts.gateway()
     dns_servers = {ip for ip, n in state.dns.server_responses.items() if n >= 3}
     namer = Namer(gw_ip, gw_mac, dns_servers)
-    t0 = state.first_ts or 0.0
+    t0, t_end = _main_time_window(state, stats)
 
     incidents = [_incident(g, namer, t0) for g in correlate(result.symptoms)]
     _cross_notes(incidents)
@@ -34,13 +36,14 @@ def analyze(path: str | os.PathLike, settings: Settings = DEFAULT_SETTINGS, anon
     for n, inc in enumerate(incidents, 1):
         inc["id"] = f"INC-{n}"
 
-    score, grade, summary = health_score(incidents, state.duration)
+    duration = max(0.0, t_end - t0)
+    score, grade, summary = health_score(incidents, duration)
     evidence = _collect_evidence(path, settings, {i for inc in incidents for i in inc["packet_ids"]}, t0)
 
     report = {
         "tool": {"name": "PacketDoctor", "version": __version__},
         "analysed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "capture": _capture_info(stats),
+        "capture": _capture_info(stats, t0, duration),
         "network": {
             "gateway_ip": gw_ip,
             "gateway_mac": gw_mac,
@@ -57,7 +60,7 @@ def analyze(path: str | os.PathLike, settings: Settings = DEFAULT_SETTINGS, anon
             "uncertain": sum(1 for i in incidents if i["verdict"] == "UNCERTAIN"),
         },
         "incidents": incidents,
-        "timeline": _timeline(state, incidents, t0),
+        "timeline": _timeline(state, incidents, t0, t_end),
         "protocols": dict(state.protocols.most_common()),
         "evidence": evidence,
         "detector_errors": result.detector_errors,
@@ -94,23 +97,37 @@ def _incident(g: Group, namer: Namer, t0: float) -> dict:
         for h in s.hosts:
             if h not in hosts:
                 hosts.append(h)
+    label, title = FRIENDLY_KIND.get(root.kind, root.kind), root.title
+    explanation = explain(root, namer).to_dict()
+    if root.category == Category.ATTACK and verdict != Verdict.ATTACK:
+        # an attack detector fired, but the clues do not support "attack"
+        label, title = BENIGN_KIND.get(root.kind, label), benign_title(root)
+        top = benign_ev[0].text if benign_ev else "the clues are not strong enough to call it an attack"
+        lead = (
+            "This resembles an attack, but the evidence points to a harmless explanation: "
+            if verdict == Verdict.FAULT
+            else "This is suspicious but not conclusive; a person should check it. "
+        )
+        explanation["what"] = lead + top[0].lower() + top[1:] + ". " + explanation["what"]
     return {
         "id": "",
         "kind": root.kind,
-        "label": FRIENDLY_KIND.get(root.kind, root.kind),
+        "label": label,
         "detector_category": root.category.value,
         "verdict": verdict.value,
         "confidence": confidence,
         "attack_score": a_score,
         "benign_score": b_score,
-        "severity": max(s.severity for s in members),
-        "title": root.title,
+        "severity": _severity(members, root, verdict),
+        "title": title,
         "t_start": t_start,
         "t_end": t_end,
         "rel_start": round(t_start - t0, 3),
         "rel_end": round(t_end - t0, 3),
         "hosts": hosts[:40],
-        "explanation": explain(root, namer).to_dict(),
+        "explanation": explanation,
+        "wireshark_filter": focused_filter(root),
+        "wireshark_exact": exact_filter(ids),
         "evidence_for_attack": [_ev(e) for e in sorted(attack_ev, key=lambda e: -e.weight)],
         "evidence_for_fault": [_ev(e) for e in sorted(benign_ev, key=lambda e: -e.weight)],
         "related": [_brief(s, t0) for s in g.related],
@@ -119,6 +136,13 @@ def _incident(g: Group, namer: Namer, t0: float) -> dict:
         "packet_ids": ids,
         "metrics": root.metrics,
     }
+
+
+def _severity(members, root, verdict) -> int:
+    sev = max(s.severity for s in members)
+    if root.category == Category.ATTACK and verdict != Verdict.ATTACK:
+        return min(sev, 3 if verdict == Verdict.UNCERTAIN else 2)  # not shown as critical without proof
+    return sev
 
 
 def _ev(e) -> dict:
@@ -159,8 +183,39 @@ def _span_overlap(a: dict, b: dict) -> bool:
     return a["t_start"] <= b["t_end"] + 5 and a["t_end"] >= b["t_start"] - 5
 
 
-def _capture_info(stats: IngestStats) -> dict:
-    start = datetime.fromtimestamp(stats.first_ts, timezone.utc).isoformat(timespec="seconds") if stats.first_ts else None
+CLOCK_JUMP = 86_400.0  # a gap of a day or more between packets means the clock is wrong
+
+
+def _main_time_window(state, stats: IngestStats) -> tuple[float, float]:
+    """Start/end of the main body of the capture.
+
+    Devices that boot without a clock stamp their first packets with times
+    near 1970 and then jump to the real date (seen in real captures). If the
+    timestamps contain a jump of more than a day, the segment holding the
+    most packets is used as the time base and a warning is added."""
+    if state.first_ts is None:
+        return 0.0, 0.0
+    secs = sorted(state.per_second)
+    segments, start = [], 0
+    for i in range(1, len(secs)):
+        if secs[i] - secs[i - 1] > CLOCK_JUMP:
+            segments.append(secs[start:i])
+            start = i
+    segments.append(secs[start:])
+    if len(segments) == 1:
+        return state.first_ts, state.last_ts
+    main = max(segments, key=lambda seg: sum(state.per_second[s] for s in seg))
+    outside = state.packets - sum(state.per_second[s] for s in main)
+    stats.warnings.append(
+        f"The capture clock jumps: {outside} packet(s) have timestamps far from the rest (a device clock that was not set?). "
+        "Times are shown relative to the main part of the capture."
+    )
+    return float(main[0]), float(main[-1] + 1)
+
+
+def _capture_info(stats: IngestStats, t0: float | None = None, duration: float | None = None) -> dict:
+    first = t0 if t0 else stats.first_ts
+    start = datetime.fromtimestamp(first, timezone.utc).isoformat(timespec="seconds") if first else None
     return {
         "file_name": stats.file_name,
         "format": stats.file_format,
@@ -171,7 +226,7 @@ def _capture_info(stats: IngestStats) -> dict:
         "truncated": stats.truncated,
         "timed_out": stats.timed_out,
         "packet_limit_hit": stats.packet_limit_hit,
-        "duration_s": round(stats.duration, 3),
+        "duration_s": round(stats.duration if duration is None else duration, 3),
         "start": start,
         "warnings": stats.warnings,
     }
@@ -183,17 +238,19 @@ def _hosts(state) -> list[dict]:
         if not state.hosts.is_local(ip):
             continue
         out.append({"ip": ip, "macs": sorted(macs), "packets": sum(u.ip_packets for u in macs.values())})
-    return sorted(out, key=lambda h: tuple(int(p) for p in h["ip"].split(".")))
+    return sorted(out, key=lambda h: tuple(int(p) if p.isdigit() else 0 for p in h["ip"].split(".")))
 
 
-def _timeline(state, incidents: list[dict], t0: float) -> dict:
+def _timeline(state, incidents: list[dict], t0: float, t_end: float) -> dict:
     if not state.per_second:
         return {"bucket_s": 1, "series": [], "events": []}
-    start, end = min(state.per_second), max(state.per_second)
-    span = end - start + 1
+    start, end = int(t0), int(t_end)
+    span = max(1, end - start + 1)
     bucket = max(1, -(-span // TIMELINE_POINTS))
     series = {}
     for sec, n in state.per_second.items():
+        if not start <= sec <= end:
+            continue  # outside the main time window (clock jump)
         b = (sec - start) // bucket
         series[b] = series.get(b, 0) + n
     points = [{"t": round(start + b * bucket - t0, 3), "packets": series.get(b, 0)} for b in range(-(-span // bucket))]

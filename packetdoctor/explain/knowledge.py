@@ -309,6 +309,114 @@ def _rogue_dhcp(s, m, n):
     )
 
 
+def _arp_storm(s, m, n):
+    sweep = not m["router_like"] and m["distinct_targets"] >= 30
+    return Explanation(
+        what=(
+            f"The device {m['mac']} ({', '.join(m['sender_ips'][:3])}) sent {m['requests']} 'who has this address?' broadcasts for "
+            f"{m['distinct_targets']} different addresses, up to {m['peak_per_second']} per second. "
+            f"{m['unanswered_share']:.0%} of them never got an answer."
+        ),
+        why="Every ARP request is a broadcast that every device on the network must process; a storm slows everything down, and a sweep is often the first step of an attack.",
+        cause=(
+            "A device discovering which addresses are in use (network scanner, malware, or an inventory tool)."
+            if sweep
+            else "A router trying to deliver traffic to addresses where no device exists, often because of scanning from the internet, a wrong route, or a subnet configured too large."
+        ),
+        fixes=[
+            f"Identify the device {m['mac']} and check what is generating the lookups.",
+            "If it is the router: check its routes and subnet mask, and block unsolicited inbound traffic to unused addresses.",
+            "If it is a computer: check whether a network scan was authorised; scan it for malware if not.",
+            "Enable broadcast storm control on managed switches.",
+        ],
+        technical=f"Peak {m['peak_per_second']}/s over 10 s; sequential share {m['sequential_share']:.0%}; router-like: {m['router_like']}.",
+    )
+
+
+def _host_unreachable(s, m, n):
+    gw = m.get("is_gateway")
+    return Explanation(
+        what=(
+            f"Devices ({', '.join(m['askers'][:4])}) tried {m['attempts']} times to find {m['ip']} ({m['role']}) on the local network and nobody answered."
+            + (" Without the gateway, nothing can reach the internet." if gw else "")
+        ),
+        why="Anything that depends on this device (internet access, printing, file shares, DNS) fails completely.",
+        cause="The device is switched off, crashed, unplugged, on a different VLAN, or its IP address was changed.",
+        fixes=[
+            f"Check that the device with address {m['ip']} is powered on and its cable/Wi-Fi link is up.",
+            "Check that it still has the expected IP address (it may have taken a different one from DHCP).",
+            "Check the switch port and VLAN configuration between the devices.",
+        ]
+        + (["Restart the router; if it stays silent, check its LAN port and its power supply."] if gw else []),
+        technical=f"{m['attempts']} ARP requests for {m['ip']} without a single reply.",
+    )
+
+
+def _icmp_unreachable(s, m, n):
+    meaning = {
+        "no_route": ("there is no route to these destinations", "A missing or wrong route on a router, a WAN link that is down, or a mistyped address."),
+        "blocked": ("traffic to these destinations is administratively blocked", "A firewall rule or access list is rejecting the traffic."),
+        "port_closed": ("nothing is listening on the requested ports", "The service is not running, or the clients use the wrong port."),
+        "ttl_expired": ("packets expire before they arrive", "A routing loop between routers (or a traceroute, which does this on purpose)."),
+    }[m["type"]]
+    return Explanation(
+        what=f"{n.ip(m['reporter'])} sent {m['messages']} error messages saying {meaning[0]}: {', '.join(m['destinations'][:5])}.",
+        why="Connections to these destinations fail immediately or time out.",
+        cause=meaning[1],
+        fixes=[
+            f"Check the routing table / firewall rules on {m['reporter']} for these destinations.",
+            "Verify the destination addresses and ports the clients are using.",
+            "For TTL-expired messages repeating for the same destination, look for two routers pointing at each other (a routing loop).",
+        ],
+        technical=f"ICMP {m['type']} x{m['messages']} from {m['reporter']}.",
+    )
+
+
+def _dhcp_failure(s, m, n):
+    return Explanation(
+        what=f"{len(m['clients'])} device(s) asked for an IP address {m['requests']} times, and {m['reason']}.",
+        why="Without an address a device cannot use the network at all; users see 'no internet' or 'limited connectivity'.",
+        cause="The DHCP server (often the router) is down or unreachable, its address pool is full, or a DHCP relay is misconfigured.",
+        fixes=[
+            "Check that the DHCP server/router is running and reachable on this network segment or VLAN.",
+            "Look at the DHCP server's lease table: if the pool is full, shorten lease times or enlarge the range.",
+            "If DHCP is relayed across VLANs, check the relay (ip helper-address) configuration.",
+        ],
+        technical=f"offers={m['offers']}, NAKs={m['naks']}, clients={', '.join(m['clients'][:5])}.",
+    )
+
+
+def _dhcp_starvation(s, m, n):
+    return Explanation(
+        what=(
+            f"{m['fake_clients']} different 'devices' asked for an IP address within one minute, physically coming from "
+            f"{len(m['sent_from']) or 'a few'} network port(s). They took {m['addresses_taken']} addresses."
+        ),
+        why="The real DHCP server runs out of addresses, so genuine devices cannot join the network; attackers often follow up with a rogue DHCP server.",
+        cause="A DHCP starvation attack (tools such as Yersinia or dhcpstarv) run from a device on the local network.",
+        fixes=[
+            f"Disconnect the port(s) the requests come from ({', '.join(m['sent_from'][:3])}).",
+            "Enable DHCP snooping with a per-port rate limit and port security (limit MAC addresses per port).",
+            "Clear the fake leases on the DHCP server.",
+        ],
+        technical=f"{m['fake_clients']} client MACs in 60 s; sent from {m['sent_from']}.",
+    )
+
+
+def _fragments(s, m, n):
+    return Explanation(
+        what=f"{m['src']} sent {m['packets_affected']} packet(s) to {n.ip(m['dst'])} broken into pieces that overlap or are impossibly small ({m['overlaps']} overlaps, {m['tiny_fragments']} tiny fragments).",
+        why="Malformed fragments are used to crash vulnerable systems (the 'teardrop' attack) or to sneak traffic past firewalls and intrusion detection.",
+        cause="A deliberate attack or evasion tool; normal operating systems never produce overlapping fragments.",
+        fixes=[
+            f"Block or investigate traffic from {m['src']}.",
+            "Make sure the target's operating system is patched.",
+            "Configure the firewall to drop overlapping and tiny fragments (most do this with 'fragment reassembly' or 'virtual reassembly').",
+        ],
+        technical=f"overlaps={m['overlaps']}, tiny={m['tiny_fragments']}.",
+    )
+
+
 _KB = {
     "tcp_retransmissions": _retrans,
     "tcp_connection_refused": _refused,
@@ -324,7 +432,36 @@ _KB = {
     "arp_spoofing": _arp_spoof,
     "dns_hijack": _dns_hijack,
     "rogue_dhcp": _rogue_dhcp,
+    "arp_storm": _arp_storm,
+    "arp_sweep": _arp_storm,
+    "host_unreachable": _host_unreachable,
+    "icmp_unreachable": _icmp_unreachable,
+    "dhcp_failure": _dhcp_failure,
+    "dhcp_starvation": _dhcp_starvation,
+    "fragment_attack": _fragments,
 }
+
+# Used when an attack-type detector fired but the evidence says "harmless":
+# the label must not shout "attack" next to a FAULT verdict.
+BENIGN_KIND = {
+    "port_scan": "Many connection attempts",
+    "arp_spoofing": "IP address takeover",
+    "dns_hijack": "Inconsistent DNS answers",
+    "rogue_dhcp": "Extra DHCP server",
+    "dhcp_starvation": "Many DHCP requests",
+    "fragment_attack": "Unusual IP fragments",
+}
+
+
+def benign_title(s: Symptom) -> str:
+    m = s.metrics
+    if s.kind == "rogue_dhcp":
+        return f"A second DHCP server ({m['rogue_server']}) is also handing out addresses"
+    if s.kind == "port_scan":
+        return f"{m['scanner']} opened connections to many ports or devices"
+    if s.kind == "arp_spoofing":
+        return f"Device {m['attacker_mac']} took over {', '.join(m.get('impersonated', {}))}"
+    return s.title
 
 FRIENDLY_KIND = {
     "tcp_retransmissions": "Packet loss",
@@ -341,4 +478,11 @@ FRIENDLY_KIND = {
     "arp_spoofing": "ARP spoofing (man-in-the-middle)",
     "dns_hijack": "DNS hijacking",
     "rogue_dhcp": "Rogue DHCP server",
+    "arp_storm": "ARP storm",
+    "arp_sweep": "ARP sweep (host discovery)",
+    "host_unreachable": "Device unreachable",
+    "icmp_unreachable": "Destination unreachable",
+    "dhcp_failure": "No IP address (DHCP failure)",
+    "dhcp_starvation": "DHCP starvation",
+    "fragment_attack": "Fragmentation attack",
 }

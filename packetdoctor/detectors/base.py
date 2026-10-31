@@ -41,3 +41,12 @@ def severity_from_ratio(ratio: float, steps=((0.15, 4), (0.07, 3))) -> int:
         if ratio >= limit:
             return sev
     return 2
+
+
+def track_span(span: list, ts: float) -> None:
+    """Keep ``span`` as [first, last] timestamp."""
+    if not span:
+        span.extend((ts, ts))
+    else:
+        span[0] = min(span[0], ts)
+        span[1] = max(span[1], ts)

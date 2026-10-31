@@ -25,6 +25,10 @@ EXPECTED = {
     "dns_hijack": [("ATTACK", "dns_hijack")],
     "rogue_dhcp": [("ATTACK", "rogue_dhcp")],
     "mixed_fault_and_attack": [("ATTACK", "arp_spoofing"), ("ATTACK", "port_scan"), ("FAULT", "dns_failure")],
+    "gateway_down": [("FAULT", "host_unreachable")],
+    "dhcp_starvation": [("ATTACK", "dhcp_starvation")],
+    "arp_sweep": [("UNCERTAIN", "arp_sweep")],
+    "ip_fragment_attack": [("ATTACK", "fragment_attack")],
 }
 
 

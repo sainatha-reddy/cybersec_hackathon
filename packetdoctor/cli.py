@@ -52,10 +52,14 @@ def analyze(
     evidence: int = typer.Option(5, "--evidence", "-e", help="evidence packets to print per incident (0 = none)"),
     max_mb: int = typer.Option(500, "--max-mb", help="refuse captures larger than this many MB"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="only print the summary table"),
+    export_dir: Optional[Path] = typer.Option(None, "--export-evidence", help="write each incident's evidence packets to DIR/INC-n_kind.pcap (opens in Wireshark)"),
 ):
     """Analyse a capture and print the diagnosis."""
     from .engine import analyze as run_analysis
 
+    if anonymize and export_dir:
+        console.print("[bold red]--export-evidence copies the original packets and cannot be combined with --anonymize.[/]")
+        raise typer.Exit(2)
     try:
         with console.status("Analysing capture...", spinner="line"):
             report = run_analysis(capture, _settings(max_mb), anonymize=anonymize)
@@ -71,6 +75,11 @@ def analyze(
 
         _write_private(html_out, render_html(report))
         console.print(f"HTML report written to [bold]{escape(str(html_out))}[/]")
+    if export_dir:
+        from .report.export import export_evidence
+
+        files = export_evidence(capture, report, export_dir, _settings(max_mb))
+        console.print(f"Evidence for {len(files)} incident(s) written to [bold]{escape(str(export_dir))}[/] (contains original packets: share with care)")
 
 
 @app.command()
@@ -201,6 +210,9 @@ def _incident_panel(inc: dict, ev_map: dict, n_evidence: int) -> Panel:
             row = ev_map.get(str(pid))
             if row:
                 t.append(f"  #{row['no']:<6} {row['time']:>9.3f}s  {row['src']} -> {row['dst']}  {row['info']}\n", style="dim")
+    if inc.get("wireshark_filter"):
+        t.append("\nWireshark filter: ", style="bold")
+        t.append(inc["wireshark_filter"] + "\n", style="cyan")
     if ex.get("technical"):
         t.append("\nTechnical: ", style="dim bold")
         t.append(ex["technical"], style="dim")

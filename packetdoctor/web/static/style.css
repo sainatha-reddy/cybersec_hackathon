@@ -220,6 +220,15 @@ td { font-family: var(--mono); }
 td.info { white-space: normal; min-width: 280px; }
 td.num { text-align: right; }
 .warn-row td { color: var(--fault); font-weight: 600; }
+.ws-row { display: grid; grid-template-columns: 7rem 1fr auto; gap: 0.5rem; align-items: center; margin: 0.25rem 0; }
+.ws-label { font-size: 0.8rem; color: var(--muted); }
+.ws code {
+  font-family: var(--mono); font-size: 0.78rem; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 0.35rem; padding: 0.25rem 0.5rem; overflow-x: auto; white-space: nowrap; display: block;
+}
+.copy { font: inherit; font-size: 0.75rem; cursor: pointer; border-radius: 0.35rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 0.2rem 0.55rem; }
+.copy:hover { border-color: var(--accent); }
+@media (max-width: 640px) { .ws-row { grid-template-columns: 1fr auto; } .ws-label { grid-column: 1 / -1; } }
 .technical { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; margin-top: 0.6rem; }
 .ok h2 { color: var(--ok); }
 

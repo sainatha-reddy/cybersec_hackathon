@@ -66,6 +66,10 @@ class PacketRecord:
     ip_proto: int | None = None
     ttl: int | None = None
     df: bool = False
+    ip_id: int | None = None
+    frag_offset: int = 0  # bytes
+    more_fragments: bool = False
+    frag_len: int | None = None  # payload bytes carried by this fragment
     sport: int | None = None
     dport: int | None = None
     # TCP
@@ -111,6 +115,8 @@ class PacketRecord:
             rcode = RCODE_NAMES.get(d.rcode, str(d.rcode))
             ans = ", ".join(a.data for a in d.answers[:3])
             return f"DNS response 0x{d.txid:04x} {d.qname} {rcode} {ans}".rstrip()
+        if self.frag_len is not None:
+            return f"IP fragment id=0x{self.ip_id or 0:04x} offset={self.frag_offset} len={self.frag_len}{' MF' if self.more_fragments else ''}"
         if self.icmp_type is not None:
             base = f"ICMP type={self.icmp_type} code={self.icmp_code}"
             if self.icmp_mtu:

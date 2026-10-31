@@ -20,6 +20,8 @@ from .lru import LRUDict, add_capped
 MASK = 0xFFFFFFFF
 HALF = 0x7FFFFFFF
 MAX_SEG_TRACK = 4096
+MAX_HOLES = 256
+REORDER_WINDOW = 0.02  # a gap filled faster than this is reordering, not loss
 
 
 def rel(seq: int, base: int) -> int:
@@ -45,6 +47,8 @@ class Direction:
     zero_windows: int = 0
     zero_window_ids: list = field(default_factory=list)
     last_ack_sent: int | None = None
+    holes: list = field(default_factory=list)  # (start, end, ts) gaps in the data seen so far
+    reordered: int = 0
 
 
 @dataclass(slots=True)
@@ -133,6 +137,7 @@ class FlowTable:
 
         if flags & TCP_SYN:
             me.base = seq
+            me.next_rel = max(me.next_rel, 1)  # the SYN uses one sequence number
             if rec.mss:
                 me.mss = rec.mss
             if flags & TCP_ACK:
@@ -144,6 +149,7 @@ class FlowTable:
                     flow.syn_ts, flow.syn_idx = rec.ts, rec.idx
         elif me.base is None:
             me.base = (seq - 1) & MASK  # mid-stream: pretend the ISN was just before
+            me.next_rel = 1
 
         # Acknowledgements (what the peer's data has reached)
         if flags & TCP_ACK and peer.base is not None and not flags & TCP_RST:
@@ -173,13 +179,25 @@ class FlowTable:
             end = r + rec.payload_len
             me.data_segments += 1
             me.bytes += rec.payload_len
+            kind = None
             if r < me.next_rel and end <= me.next_rel and r < HALF:
-                if peer_acked_beyond(me, end):
+                hole = _take_hole(me, r, end) if r not in me.segs else None
+                if hole is not None:
+                    # data we never saw before, filling a gap: it was lost
+                    # *before* the capture point and re-sent (or just reordered)
+                    if rec.ts - hole[2] > REORDER_WINDOW:
+                        kind = "lost_before_capture"
+                    else:
+                        me.reordered += 1
+                elif peer_acked_beyond(me, end):
                     kind = "spurious"
                 elif me.dupacks.get(r, 0) >= 3:
                     kind = "fast"
                 else:
                     kind = "timeout"
+            elif r > me.next_rel and me.next_rel > 0 and r < HALF and len(me.holes) < MAX_HOLES:
+                me.holes.append((me.next_rel, r, rec.ts))
+            if kind is not None:
                 me.retrans += 1
                 me.retrans_kinds[kind] += 1
                 add_capped(me.retrans_ids, rec.idx, 200)
@@ -187,8 +205,8 @@ class FlowTable:
                     me.retrans_first = rec.ts
                 me.retrans_last = rec.ts
                 event.retrans = kind
-            else:
-                me.next_rel = max(me.next_rel, end)
+            if end > me.next_rel and r < HALF:
+                me.next_rel = end
             seg = me.segs.get(r)
             if seg is None:
                 if len(me.segs) >= MAX_SEG_TRACK:
@@ -216,3 +234,16 @@ class FlowTable:
 
 def peer_acked_beyond(direction: Direction, end: int) -> bool:
     return direction.acked >= end
+
+
+def _take_hole(direction: Direction, start: int, end: int):
+    """Find (and shrink or remove) the sequence gap that [start, end) fills."""
+    for i, (h0, h1, ts) in enumerate(direction.holes):
+        if h0 <= start < h1:
+            del direction.holes[i]
+            if h0 < start:
+                direction.holes.append((h0, start, ts))
+            if end < h1:
+                direction.holes.append((end, h1, ts))
+            return (h0, h1, ts)
+    return None

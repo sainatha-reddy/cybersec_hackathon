@@ -604,6 +604,89 @@ def scenario_mixed(cap: Capture) -> None:
     _mitm_relay(cap, LAPTOP, 55.5)
 
 
+def scenario_gateway_down(cap: Capture) -> None:
+    """The router crashes at t=30s: ARP for it goes unanswered, DNS (served by
+    the router) times out, and a device renewing its lease gets no answer."""
+    baseline(cap, 0, 30)
+    t = 30.0
+    while t < 60:
+        for i, c in enumerate(CLIENTS):
+            cap.add(t + 0.1 * i, Ether(src=mac_of(c), dst=BROADCAST) / ARP(op=1, hwsrc=mac_of(c), psrc=c, pdst=GW_IP))
+        client = cap.rng.choice(CLIENTS)
+        dns_lookup(cap, t + 0.5, client, cap.rng.choice(list(SITES)[:5]), respond=False)
+        t += cap.rng.uniform(1.5, 3.0)
+    chaddr = bytes.fromhex(MACS[PHONE].replace(":", "")) + b"\x00" * 10
+    for k in range(5):
+        cap.add(
+            35.0 + 4 * k,
+            Ether(src=MACS[PHONE], dst=BROADCAST) / IP(src="0.0.0.0", dst="255.255.255.255") / UDP(sport=68, dport=67)
+            / BOOTP(op=1, xid=0xD1, chaddr=chaddr) / DHCP(options=[("message-type", "discover"), "end"]),
+        )
+
+
+def scenario_dhcp_starvation(cap: Capture) -> None:
+    """A device floods the DHCP server with requests from 150 invented MAC
+    addresses and empties the pool; a real visitor then cannot join."""
+    baseline(cap, 0, 60)
+    t = 15.0
+    for k in range(150):
+        fake = "02:%02x:%02x:%02x:%02x:%02x" % tuple(cap.rng.randrange(256) for _ in range(5))
+        chaddr = bytes.fromhex(fake.replace(":", "")) + b"\x00" * 10
+        xid = 0x5000 + k
+        disc = Ether(src=ATTACKER_MAC, dst=BROADCAST) / IP(src="0.0.0.0", dst="255.255.255.255") / UDP(sport=68, dport=67) / BOOTP(op=1, xid=xid, chaddr=chaddr) / DHCP(options=[("message-type", "discover"), "end"])
+        cap.add(t, disc)
+        if k < 40:  # pool has 40 free addresses
+            offered = f"192.168.1.{100 + k}"
+            cap.add(t + 0.003, Ether(src=GW_MAC, dst=BROADCAST) / IP(src=GW_IP, dst="255.255.255.255") / UDP(sport=67, dport=68) / BOOTP(op=2, xid=xid, chaddr=chaddr, yiaddr=offered) / DHCP(options=[("message-type", "offer"), ("server_id", GW_IP), ("router", GW_IP), ("name_server", GW_IP), "end"]))
+            cap.add(t + 0.005, Ether(src=ATTACKER_MAC, dst=BROADCAST) / IP(src="0.0.0.0", dst="255.255.255.255") / UDP(sport=68, dport=67) / BOOTP(op=1, xid=xid, chaddr=chaddr) / DHCP(options=[("message-type", "request"), ("server_id", GW_IP), ("requested_addr", offered), "end"]))
+            cap.add(t + 0.007, Ether(src=GW_MAC, dst=BROADCAST) / IP(src=GW_IP, dst="255.255.255.255") / UDP(sport=67, dport=68) / BOOTP(op=2, xid=xid, chaddr=chaddr, yiaddr=offered) / DHCP(options=[("message-type", "ack"), ("server_id", GW_IP), ("router", GW_IP), ("name_server", GW_IP), "end"]))
+        t += 0.04
+    chaddr = bytes.fromhex(GUEST_MAC.replace(":", "")) + b"\x00" * 10
+    for k in range(5):  # the real visitor's laptop retries and gives up
+        cap.add(30.0 + 3 * k, Ether(src=GUEST_MAC, dst=BROADCAST) / IP(src="0.0.0.0", dst="255.255.255.255") / UDP(sport=68, dport=67) / BOOTP(op=1, xid=0xE1, chaddr=chaddr) / DHCP(options=[("message-type", "discover"), "end"]))
+
+
+def scenario_arp_sweep(cap: Capture) -> None:
+    """A laptop walks through every address of the subnet with ARP (host
+    discovery, as done by network scanners), slowly enough to look quiet."""
+    baseline(cap, 0, 70)
+    t = 10.0
+    for host in range(2, 255):
+        dst = f"192.168.1.{host}"
+        if dst == ATTACKER_IP:
+            continue
+        cap.add(t, Ether(src=ATTACKER_MAC, dst=BROADCAST) / ARP(op=1, hwsrc=ATTACKER_MAC, psrc=ATTACKER_IP, pdst=dst))
+        if dst in MACS:
+            cap.add(t + 0.0004, Ether(src=MACS[dst], dst=ATTACKER_MAC) / ARP(op=2, hwsrc=MACS[dst], psrc=dst, hwdst=ATTACKER_MAC, pdst=ATTACKER_IP))
+        t += 0.2
+
+
+def scenario_fragment_attack(cap: Capture) -> None:
+    """Teardrop-style overlapping fragments and tiny TCP fragments aimed at the desktop."""
+    baseline(cap, 0, 40)
+    t = 12.0
+    for k in range(8):
+        pid = 0x4000 + k
+        first = eth(ATTACKER_IP, DESKTOP) / IP(src=ATTACKER_IP, dst=DESKTOP, id=pid, flags="MF", proto=17) / Raw(b"\x00" * 36)
+        overlap = eth(ATTACKER_IP, DESKTOP) / IP(src=ATTACKER_IP, dst=DESKTOP, id=pid, frag=3, proto=17) / Raw(b"\x00" * 4)
+        cap.add(t, first)
+        cap.add(t + 0.0005, overlap)
+        t += 1.5
+    for k in range(4):
+        pid = 0x4100 + k
+        tiny = eth(ATTACKER_IP, DESKTOP) / IP(src=ATTACKER_IP, dst=DESKTOP, id=pid, flags="MF", proto=6) / Raw(b"\x00" * 8)
+        rest = eth(ATTACKER_IP, DESKTOP) / IP(src=ATTACKER_IP, dst=DESKTOP, id=pid, frag=1, proto=6) / Raw(b"\x00" * 32)
+        cap.add(t, tiny)
+        cap.add(t + 0.0005, rest)
+        t += 1.0
+    # legitimate fragmentation (a large UDP datagram) must not be flagged
+    for k in range(3):
+        pid = 0x4200 + k
+        cap.add(t, eth(LAPTOP, GW_IP) / IP(src=LAPTOP, dst="203.0.113.50", id=pid, flags="MF", proto=17) / Raw(b"\x00" * 1480))
+        cap.add(t + 0.0003, eth(LAPTOP, GW_IP) / IP(src=LAPTOP, dst="203.0.113.50", id=pid, frag=185, proto=17) / Raw(b"\x00" * 600))
+        t += 0.5
+
+
 SCENARIOS = {
     "clean": scenario_clean,
     "tcp_retransmissions": scenario_retransmissions,
@@ -617,6 +700,10 @@ SCENARIOS = {
     "dns_hijack": scenario_dns_hijack,
     "rogue_dhcp": scenario_rogue_dhcp,
     "mixed_fault_and_attack": scenario_mixed,
+    "gateway_down": scenario_gateway_down,
+    "dhcp_starvation": scenario_dhcp_starvation,
+    "arp_sweep": scenario_arp_sweep,
+    "ip_fragment_attack": scenario_fragment_attack,
 }
 
 

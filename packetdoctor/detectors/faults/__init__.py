@@ -1,10 +1,13 @@
 from .arp_conflict import ArpConflictDetector
+from .arp_storm import ArpStormDetector
+from .dhcp_failure import DhcpFailureDetector
 from .dns_failure import DnsFailureDetector
 from .duplicate_ip import DuplicateIpDetector
 from .latency import LatencyDetector
 from .mtu import MtuDetector
 from .tcp_reset import TcpResetDetector
 from .tcp_retrans import TcpRetransmissionDetector
+from .unreachable import UnreachableDetector
 
 FAULT_DETECTORS = [
     TcpRetransmissionDetector,
@@ -14,4 +17,7 @@ FAULT_DETECTORS = [
     ArpConflictDetector,
     MtuDetector,
     LatencyDetector,
+    ArpStormDetector,
+    UnreachableDetector,
+    DhcpFailureDetector,
 ]

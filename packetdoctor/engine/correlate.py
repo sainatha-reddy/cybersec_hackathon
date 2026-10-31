@@ -23,13 +23,20 @@ from ..models import Symptom
 RANK = {
     "arp_spoofing": 10,
     "rogue_dhcp": 10,
+    "dhcp_starvation": 9,
     "dns_hijack": 8,
     "port_scan": 8,
+    "fragment_attack": 8,
     "duplicate_ip": 7,
+    "dhcp_failure": 5,
+    "host_unreachable": 6,
     "mtu_blackhole": 6,
+    "arp_storm": 5,
+    "arp_sweep": 5,
     "mtu_mismatch": 5,
     "dns_failure": 5,
     "arp_conflict": 4,
+    "icmp_unreachable": 3,
     "tcp_connection_refused": 3,
     "tcp_connection_aborted": 3,
     "tcp_retransmissions": 2,
@@ -101,6 +108,24 @@ def _scan_refused(cause: Symptom, effect: Symptom) -> bool:
     return cause.metrics.get("scanner") in effect.metrics.get("clients", []) and overlaps(cause, effect)
 
 
+def _starvation_blocks(cause: Symptom, effect: Symptom) -> bool:
+    return overlaps(cause, effect, slack=120)
+
+
+def _starvation_then_rogue(cause: Symptom, effect: Symptom) -> bool:
+    senders = set(cause.metrics.get("sent_from", []))
+    return bool(senders & set(effect.metrics.get("rogue_mac", []))) or overlaps(cause, effect, slack=300)
+
+
+def _unreachable_server(cause: Symptom, effect: Symptom) -> bool:
+    ip = cause.metrics.get("ip")
+    return ip in (effect.metrics.get("server"), *effect.metrics.get("servers", [])) and overlaps(cause, effect, slack=30)
+
+
+def _gateway_down_dhcp(cause: Symptom, effect: Symptom) -> bool:
+    return bool(cause.metrics.get("is_gateway")) and overlaps(cause, effect, slack=30)
+
+
 @dataclass(frozen=True)
 class Rule:
     cause: str
@@ -125,6 +150,11 @@ RULES = [
     Rule("mtu_blackhole", "tcp_connection_aborted", _mtu_aborts, "Connections give up after their large packets never get through"),
     Rule("mtu_mismatch", "tcp_retransmissions", _same_path, "Packets were too large for the path and had to be re-sent smaller"),
     Rule("dns_failure", "high_latency", _dns_slow, "DNS answers are slow because the DNS server is struggling"),
+    Rule("dhcp_starvation", "dhcp_failure", _starvation_blocks, "The flood of fake requests used up the address pool, so real devices get nothing"),
+    Rule("rogue_dhcp", "dhcp_starvation", _starvation_then_rogue, "Starving the real DHCP server first is how a rogue server makes sure its offers win"),
+    Rule("host_unreachable", "dns_failure", _unreachable_server, "The DNS server cannot even be reached on the local network"),
+    Rule("host_unreachable", "tcp_retransmissions", _unreachable_server, "Packets keep being re-sent to a device that has gone silent"),
+    Rule("host_unreachable", "dhcp_failure", _gateway_down_dhcp, "The router that hands out addresses is the device that has gone silent"),
 ]
 
 

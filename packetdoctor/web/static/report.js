@@ -243,6 +243,25 @@
     return el("div", { class: "block" }, el("h4", { text: "Knock-on effects (caused by this problem, not separate problems)" }), wrap);
   }
 
+  function copyRow(label, value) {
+    var code = el("code", { text: value });
+    var btn = el("button", { type: "button", class: "copy", text: "Copy" });
+    btn.addEventListener("click", function () {
+      var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy"; }, 1200); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(done, function () {});
+    });
+    return el("div", { class: "ws-row" }, el("span", { class: "ws-label", text: label }), code, btn);
+  }
+
+  function wiresharkBox(inc) {
+    if (!inc.wireshark_filter && !inc.wireshark_exact) return null;
+    return el("div", { class: "block ws" },
+      el("h4", { text: "Dig deeper in Wireshark (paste into the display filter bar)" }),
+      inc.wireshark_filter ? copyRow("Pattern", inc.wireshark_filter) : null,
+      inc.wireshark_exact ? copyRow("Exact packets", inc.wireshark_exact) : null
+    );
+  }
+
   function incidentCard(inc, evidence) {
     var ex = inc.explanation;
     var forAttack = inc.evidence_for_attack.map(function (e) { return el("li", { class: "ev-attack", text: e.text }); });
@@ -271,6 +290,7 @@
         el("div", { class: "block fix" }, el("h4", { text: "What to do" }), el("ol", null, ex.fixes.map(function (f) { return el("li", { text: f }); })))
       ),
       evidenceTable(inc, evidence),
+      wiresharkBox(inc),
       ex.technical ? el("p", { class: "technical", text: "Technical: " + ex.technical }) : null
     );
   }

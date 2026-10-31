@@ -11,8 +11,8 @@ class TcpResetDetector(Detector):
 
     * refused: the same service answers connection attempts with RST, i.e.
       the port is closed or the service is down;
-    * aborted: established connections carrying data are torn down with RST
-      instead of a normal FIN close.
+    * aborted: established connections carrying data are torn down by the
+      server side with RST instead of a normal FIN close.
 
     A client that gets refused on many *different* ports is scanning, not
     suffering a fault; those are left to the port-scan detector."""
@@ -27,7 +27,9 @@ class TcpResetDetector(Detector):
             if flow.refused:
                 refused[flow.server].append(flow)
                 refused_ports_by_client[flow.client[0]].add(flow.server)
-            elif flow.rst_by is not None and flow.rst_after_data and not flow.fin_seen:
+            elif flow.rst_by == 1 and flow.rst_after_data and not flow.fin_seen:
+                # only resets sent by the server side: clients (browsers, apps)
+                # routinely reset their own connections when they are done
                 aborted[flow.server].append(flow)
 
         out = []
@@ -57,8 +59,7 @@ class TcpResetDetector(Detector):
         for (srv_ip, srv_port), flows in aborted.items():
             if len(flows) < self.t.reset_min_count:
                 continue
-            by_server = sum(1 for f in flows if f.rst_by == 1)
-            who = "the server" if by_server >= len(flows) / 2 else "the client"
+            who = "the server"
             clients = sorted({f.client[0] for f in flows})
             out.append(
                 Symptom(
