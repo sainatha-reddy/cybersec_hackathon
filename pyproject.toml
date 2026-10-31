@@ -33,3 +33,4 @@ packetdoctor = ["web/static/*", "web/templates/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient`"]

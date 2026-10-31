@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -21,6 +22,14 @@ from rich.text import Text
 from . import __version__
 from .config import Limits, Settings
 from .ingest import CaptureError
+
+# Legacy Windows consoles (cp1252) cannot print every character; replace
+# instead of crashing.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 app = typer.Typer(add_completion=False, help="PacketDoctor: find faults and attacks in packet captures, explained in plain language.")
 console = Console()
@@ -48,7 +57,7 @@ def analyze(
     from .engine import analyze as run_analysis
 
     try:
-        with console.status("Analysing capture..."):
+        with console.status("Analysing capture...", spinner="line"):
             report = run_analysis(capture, _settings(max_mb), anonymize=anonymize)
     except CaptureError as exc:
         console.print(f"[bold red]Cannot analyse:[/] {escape(str(exc))}")

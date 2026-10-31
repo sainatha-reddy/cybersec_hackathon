@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PacketDoctor</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">+</span>
+      <div>
+        <h1>PacketDoctor</h1>
+        <p class="tagline">Finds faults and attacks in packet captures and explains them in plain language</p>
+      </div>
+    </div>
+    <div class="topbar-actions" id="report-actions" hidden>
+      <button type="button" class="btn ghost" id="new-analysis">New analysis</button>
+      <button type="button" class="btn ghost" id="download-json">Download JSON</button>
+      <button type="button" class="btn" id="download-html">Download report</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="upload-view" class="upload-view">
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose a capture file">
+        <div class="drop-icon" aria-hidden="true">&#8681;</div>
+        <p class="drop-title">Drop a .pcap or .pcapng file here</p>
+        <p class="muted">or click to choose a file. It is analysed on this computer and deleted straight after.</p>
+        <input type="file" id="file-input" accept=".pcap,.pcapng,.cap" hidden>
+      </div>
+      <label class="check"><input type="checkbox" id="anonymize"> Hide IP and MAC addresses in the results (anonymise)</label>
+      <div class="samples">
+        <h2>No capture at hand? Try a sample</h2>
+        <div id="sample-list" class="sample-list"></div>
+      </div>
+      <p class="error" id="error" role="alert" hidden></p>
+    </section>
+
+    <section id="loading" class="loading" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Examining packets...</p>
+    </section>
+
+    <section id="report" hidden></section>
+  </main>
+
+  <footer class="footer">PacketDoctor runs offline. No data leaves this computer.</footer>
+  <script src="/static/report.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
