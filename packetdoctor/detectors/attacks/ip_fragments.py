@@ -24,11 +24,19 @@ class FragmentAttackDetector(Detector):
         super().__init__(settings)
         self.packets: LRUDict[tuple, list] = LRUDict(50_000)
         self.findings = defaultdict(lambda: {"overlap": 0, "tiny": 0, "ids": [], "t": [], "packets": set()})
+        self.seen_at = LRUDict(min(settings.limits.max_flows, 50_000))
+        self.last_end = LRUDict(min(settings.limits.max_flows, 50_000))
+        self.packets.maxlen = min(settings.limits.max_flows, 50_000)
 
     def on_packet(self, rec, ctx, state):
         if rec.frag_len is None or rec.src_ip is None:
             return
         key = (rec.src_ip, rec.dst_ip, rec.ip_id, rec.ip_proto)
+        previous = self.seen_at.get(key)
+        if previous is not None and (rec.ts - previous > 30 or rec.ts < previous):
+            self.packets.pop(key, None)
+            self.last_end.pop(key, None)
+        self.seen_at.put(key, rec.ts)
         frags = self.packets.get_or_create(key, list)
         start, end = rec.frag_offset, rec.frag_offset + rec.frag_len
         f = self.findings[(rec.src_ip, rec.dst_ip)]
@@ -53,6 +61,18 @@ class FragmentAttackDetector(Detector):
                 f["packets"].add(rec.ip_id)
         if len(frags) < 64:
             frags.append((start, end, rec.idx))
+        if not rec.more_fragments:
+            self.last_end.put(key, end)
+        target = self.last_end.get(key)
+        covered = 0
+        for lower, upper, _ in sorted(frags):
+            if lower > covered:
+                break
+            covered = max(covered, upper)
+        if target is not None and covered >= target:
+            self.packets.pop(key, None)
+            self.seen_at.pop(key, None)
+            self.last_end.pop(key, None)
 
     def finalize(self, state):
         out = []

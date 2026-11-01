@@ -4,12 +4,18 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var current = null;
+  var controller = null;
+  var activeJob = null;
+  var uploadLimit = null;
 
   function show(view) {
     $("upload-view").hidden = view !== "upload";
     $("loading").hidden = view !== "loading";
     $("report").hidden = view !== "report";
     $("report-actions").hidden = view !== "report";
+    $("main").setAttribute("aria-busy", view === "loading" ? "true" : "false");
+    if (view === "loading") $("loading-title").focus();
+    if (view === "upload") $("dropzone").focus();
   }
 
   function showError(msg) {
@@ -17,21 +23,45 @@
     var e = $("error");
     e.textContent = msg;
     e.hidden = false;
+    e.focus();
+    $("status").textContent = msg;
   }
 
   async function request(url, body) {
+    if (controller) return;
+    controller = new AbortController();
+    var requestController = controller;
     $("error").hidden = true;
+    $("progress").textContent = "Uploading and preparing analysis…";
+    $("status").textContent = "Analysis started.";
     show("loading");
     try {
-      var res = await fetch(url, { method: "POST", body: body });
+      var res = await fetch(url + "?background=true", { method: "POST", body: body, signal: requestController.signal });
       var data = await res.json().catch(function () { return {}; });
       if (!res.ok) throw new Error(data.detail || ("Analysis failed (" + res.status + ")"));
+      activeJob = data.job_id;
+      while (data.job_id || data.status === "running") {
+        await new Promise(function (resolve) { setTimeout(resolve, 300); });
+        var progressResponse = await fetch("/api/jobs/" + activeJob, { signal: requestController.signal });
+        data = await progressResponse.json();
+        if (!progressResponse.ok) throw new Error(data.detail || "Could not read analysis status.");
+        $("progress").textContent = "Examining packets · " + data.elapsed_s + " seconds elapsed";
+        if (data.status === "failed" || data.status === "cancelled") throw new Error(data.error || "Analysis cancelled.");
+        if (data.status === "complete") { data = data.report; break; }
+      }
       current = data;
       PacketDoctor.renderReport(data, $("report"));
       show("report");
       window.scrollTo(0, 0);
+      $("diagnosis-title").focus({ preventScroll: true });
+      $("status").textContent = data.health.summary;
     } catch (err) {
-      showError(err.message || String(err));
+      if (err.name === "AbortError") { show("upload"); $("status").textContent = "Analysis cancelled."; }
+      else showError(err.message || String(err));
+    } finally {
+      if (activeJob) fetch("/api/jobs/" + activeJob, { method: "DELETE" }).catch(function () {});
+      activeJob = null;
+      controller = null;
     }
   }
 
@@ -43,6 +73,7 @@
 
   function analyzeFile(file) {
     if (!file) return;
+    if (uploadLimit && file.size > uploadLimit) { showError("File exceeds the displayed upload limit. Choose a smaller capture."); return; }
     var fd = anonymizeForm();
     fd.append("file", file, file.name);
     request("/api/analyze", fd);
@@ -65,7 +96,11 @@
         b.addEventListener("click", function () { request("/api/analyze-sample/" + encodeURIComponent(s.name), anonymizeForm()); });
         box.appendChild(b);
       });
-    }).catch(function () {});
+    }).catch(function () { $("sample-list").textContent = "Samples could not be loaded. Refresh the page or upload your own capture."; });
+    fetch("/api/health").then(function (response) { return response.json(); }).then(function (limits) {
+      uploadLimit = limits.max_upload_mb * 1024 * 1024;
+      $("limits").textContent = "Upload limit: " + limits.max_upload_mb + " MB · Time limit: " + limits.timeout_seconds + " seconds · Memory budget: " + limits.max_memory_mb + " MB";
+    }).catch(function () { $("limits").textContent = "Analysis limits are unavailable. Check that the local server is running."; });
   }
 
   function download(name, blob) {
@@ -111,6 +146,16 @@
   $("download-json").addEventListener("click", function () {
     if (current) download(baseName() + ".report.json", new Blob([JSON.stringify(current, null, 2)], { type: "application/json" }));
   });
-  $("download-html").addEventListener("click", downloadHtml);
+  $("download-html").addEventListener("click", function () {
+    var button = $("download-html");
+    button.disabled = true;
+    downloadHtml().catch(function () {
+      $("status").textContent = "The report could not be downloaded. Check the local server and try again.";
+    }).finally(function () { button.disabled = false; });
+  });
+  $("cancel-analysis").addEventListener("click", function () {
+    if (activeJob) fetch("/api/jobs/" + activeJob, { method: "DELETE" }).catch(function () {});
+    if (controller) controller.abort();
+  });
   loadSamples();
 })();

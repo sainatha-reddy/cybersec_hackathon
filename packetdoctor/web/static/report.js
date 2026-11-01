@@ -68,7 +68,7 @@
 
   function gauge(score, grade) {
     var r = 52, c = 2 * Math.PI * r;
-    var s = svg("svg", { viewBox: "0 0 120 120", class: "gauge", role: "img", "aria-label": "Network health " + score + " out of 100" });
+    var s = svg("svg", { viewBox: "0 0 120 120", class: "gauge", role: "img", "aria-label": score === null ? "Network health not assessed" : "Network health " + score + " out of 100" });
     s.appendChild(svg("circle", { cx: 60, cy: 60, r: r, class: "gauge-bg" }));
     var arc = svg("circle", {
       cx: 60, cy: 60, r: r, class: "gauge-fg grade-" + grade.toLowerCase().replace(/\s+/g, "-"),
@@ -77,10 +77,10 @@
     });
     s.appendChild(arc);
     var t = svg("text", { x: 60, y: 58, class: "gauge-score", "text-anchor": "middle" });
-    t.textContent = String(score);
+    t.textContent = score === null ? "—" : String(score);
     s.appendChild(t);
     var t2 = svg("text", { x: 60, y: 78, class: "gauge-label", "text-anchor": "middle" });
-    t2.textContent = "/ 100";
+    t2.textContent = score === null ? "not assessed" : "/ 100";
     s.appendChild(t2);
     return s;
   }
@@ -102,11 +102,11 @@
     var warnings = (cap.warnings || []).concat(report.detector_errors || []).map(function (w) {
       return el("p", { class: "warning", text: w });
     });
-    if (report.anonymized) warnings.push(el("p", { class: "note", text: "Addresses in this report are anonymised." }));
+    if (report.anonymized) warnings.push(el("p", { class: "note", text: report.privacy_note || "Addresses in this report are pseudonymised; other context remains." }));
     return el("section", { class: "card summary" },
       el("div", { class: "gauge-wrap" }, gauge(h.score, h.grade), el("p", { class: "grade grade-text-" + h.grade.toLowerCase().replace(/\s+/g, "-"), text: h.grade })),
       el("div", { class: "summary-body" },
-        el("h2", { text: "Diagnosis" }),
+        el("h2", { text: "Diagnosis", tabindex: "-1", id: "diagnosis-title" }),
         el("p", { class: "lead", text: h.summary }),
         stats, meta, warnings
       )
@@ -130,7 +130,7 @@
     var rowsTop = top + chartH + 18;
     var H = rowsTop + Math.max(1, events.length) * rowH + 24;
     var x = function (t) { return left + (W - left - right) * Math.max(0, Math.min(1, t / duration)); };
-    var s = svg("svg", { viewBox: "0 0 " + W + " " + H, class: "timeline", role: "img", "aria-label": "Traffic and incidents over time" });
+    var s = svg("svg", { viewBox: "0 0 " + W + " " + H, class: "timeline", role: "group", "aria-label": "Traffic and incidents over time" });
 
     var max = 1;
     series.forEach(function (p) { if (p.packets > max) max = p.packets; });
@@ -146,7 +146,7 @@
 
     events.forEach(function (ev, i) {
       var y = rowsTop + i * rowH;
-      var g = svg("g", { class: "band band-" + ev.verdict.toLowerCase(), tabindex: 0, "data-target": ev.id });
+      var g = svg("g", { class: "band band-" + ev.verdict.toLowerCase(), tabindex: 0, role: "link", "aria-label": "Show " + ev.id + ": " + ev.label, "data-target": ev.id });
       var x0 = x(ev.start), x1 = Math.max(x(ev.end), x0 + 6);
       g.appendChild(svg("rect", { x: x0, y: y, width: x1 - x0, height: rowH - 6, rx: 3 }));
       var shade = svg("rect", { x: x0, y: top, width: x1 - x0, height: chartH, class: "shade" });
@@ -158,7 +158,7 @@
       title.textContent = ev.id + " " + ev.verdict + ": " + ev.label + " (" + fmtTime(ev.start) + " to " + fmtTime(ev.end) + ")";
       g.appendChild(title);
       g.addEventListener("click", function () { focusIncident(ev.id); });
-      g.addEventListener("keydown", function (e) { if (e.key === "Enter") focusIncident(ev.id); });
+      g.addEventListener("keydown", function (event) { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); focusIncident(ev.id); } });
       s.appendChild(g);
     });
 
@@ -186,7 +186,15 @@
   function focusIncident(id) {
     var card = document.getElementById("incident-" + id);
     if (!card) return;
-    card.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (card.hidden) {
+      var all = document.querySelector('[data-filter="ALL"]');
+      if (all) all.click();
+      card.hidden = false;
+    }
+    var heading = card.querySelector("h3");
+    heading.focus({ preventScroll: true });
+    var reduced = global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    card.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
     card.classList.add("flash");
     setTimeout(function () { card.classList.remove("flash"); }, 1200);
   }
@@ -219,7 +227,7 @@
     });
     return el("details", { class: "evidence" },
       el("summary", { text: "Evidence: " + rows.length + " packets (numbers match Wireshark's No. column)" }),
-      el("div", { class: "table-wrap" },
+      el("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Evidence packets" },
         el("table", null,
           el("thead", null, el("tr", null, ["No.", "Time (s)", "Source", "Destination", "Proto", "Info"].map(function (h) { return el("th", { text: h }); }))),
           tbody
@@ -240,7 +248,7 @@
         el("em", { text: c.reason })
       ));
     });
-    return el("div", { class: "block" }, el("h4", { text: "Knock-on effects (caused by this problem, not separate problems)" }), wrap);
+    return el("div", { class: "block" }, el("h4", { text: "Likely related effects (linked by the diagnostic rules)" }), wrap);
   }
 
   function copyRow(label, value) {
@@ -275,11 +283,13 @@
         severityDots(inc.severity),
         el("span", { class: "inc-time", text: fmtTime(inc.rel_start) + " – " + fmtTime(inc.rel_end) })
       ),
-      el("h3", { text: inc.title }),
+      el("h3", { text: inc.title, tabindex: "-1" }),
+      ex.fixes.length ? el("p", { class: "next-action" }, el("strong", { text: "First action: " }), ex.fixes[0]) : null,
       el("div", { class: "block" }, el("h4", { text: "What happened" }), el("p", { text: ex.what })),
       ex.why ? el("p", { class: "why" }, el("strong", { text: "Why it matters: " }), ex.why) : null,
-      el("div", { class: "block verdict-box" },
-        el("h4", null, "Why we think this is " + VERDICT_TEXT[inc.verdict], el("span", { class: "conf", text: " confidence " + Math.round(inc.confidence * 100) + "%" })),
+      el("details", { class: "block verdict-box" },
+        el("summary", null, "Why we think this is " + VERDICT_TEXT[inc.verdict], el("span", { class: "conf", text: " · evidence score " + Math.round(inc.confidence * 100) + "%" })),
+        el("p", { class: "small muted", text: "A heuristic combination of clues, not a calibrated probability." }),
         el("div", { class: "meters" }, meter("Attack clues", inc.attack_score, "attack"), meter("Fault clues", inc.benign_score, "fault")),
         el("ul", { class: "evlist" }, forAttack, forFault, notes)
       ),
@@ -291,18 +301,20 @@
       ),
       evidenceTable(inc, evidence),
       wiresharkBox(inc),
-      ex.technical ? el("p", { class: "technical", text: "Technical: " + ex.technical }) : null
+      ex.technical ? el("details", { class: "technical" }, el("summary", { text: "Technical details" }), el("p", { text: ex.technical })) : null
     );
   }
 
   function filters(container, report) {
-    var bar = el("div", { class: "filters", role: "toolbar", "aria-label": "Filter incidents" });
+    var bar = el("div", { class: "filters", role: "group", "aria-label": "Filter incidents" });
     var opts = [["ALL", "All (" + report.incidents.length + ")"], ["ATTACK", "Attacks (" + report.summary.attacks + ")"], ["FAULT", "Faults (" + report.summary.faults + ")"], ["UNCERTAIN", "Uncertain (" + report.summary.uncertain + ")"]];
     opts.forEach(function (o, i) {
-      var b = el("button", { type: "button", class: i === 0 ? "chip active" : "chip", text: o[1] });
+      var b = el("button", { type: "button", class: i === 0 ? "chip active" : "chip", text: o[1], "aria-pressed": i === 0 ? "true" : "false", "data-filter": o[0] });
       b.addEventListener("click", function () {
-        Array.prototype.forEach.call(bar.children, function (c) { c.classList.remove("active"); });
+        Array.prototype.forEach.call(bar.children, function (c) { c.classList.remove("active"); c.setAttribute("aria-pressed", "false"); });
         b.classList.add("active");
+        b.setAttribute("aria-pressed", "true");
+        if (global.history && global.location.protocol !== "file:") global.history.replaceState(null, "", "#filter=" + o[0]);
         Array.prototype.forEach.call(container.querySelectorAll(".incident"), function (card) {
           card.hidden = !(o[0] === "ALL" || card.getAttribute("data-verdict") === o[0]);
         });
@@ -332,10 +344,10 @@
     });
     return el("section", { class: "card" },
       el("h2", { text: "Network overview" }),
-      el("div", { class: "two-col" },
+      el("div", { class: "two-col network-grid" },
         el("div", null, el("h4", { text: "Protocols" }), bars),
         el("div", null, el("h4", { text: "Local devices seen" }),
-          el("div", { class: "table-wrap" }, el("table", null,
+          el("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Network devices" }, el("table", null,
             el("thead", null, el("tr", null, el("th", { text: "IP" }), el("th", { text: "Hardware address(es)" }), el("th", { text: "Packets" }))),
             tbody)))
       )
@@ -352,9 +364,13 @@
       report.incidents.forEach(function (inc) { list.appendChild(incidentCard(inc, report.evidence || {})); });
       container.appendChild(list);
     } else {
-      container.appendChild(el("section", { class: "card ok" }, el("h2", { text: "No problems found" }), el("p", { text: "No faults or attacks were detected in this capture." })));
+      container.appendChild(el("section", { class: "card ok" }, el("h2", { text: report.analysis && report.analysis.coverage !== "complete" ? "Analysis needs attention" : "No problems detected" }), el("p", { text: report.health.summary })));
     }
     container.appendChild(networkCard(report));
+    if (global.location.hash.indexOf("#filter=") === 0) {
+      var selected = container.querySelector('[data-filter="' + global.location.hash.slice(8).replace(/[^A-Z]/g, "") + '"]');
+      if (selected) selected.click();
+    }
     container.appendChild(el("p", { class: "muted small", text: "Generated by " + report.tool.name + " " + report.tool.version + " on " + report.analysed_at + "." }));
   }
 

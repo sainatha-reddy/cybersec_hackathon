@@ -23,7 +23,7 @@ class TcpResetDetector(Detector):
         refused = defaultdict(list)
         aborted = defaultdict(list)
         refused_ports_by_client = defaultdict(set)
-        for flow in state.flows.flows.values():
+        for flow in state.flows.all_flows():
             if flow.refused:
                 refused[flow.server].append(flow)
                 refused_ports_by_client[flow.client[0]].add(flow.server)

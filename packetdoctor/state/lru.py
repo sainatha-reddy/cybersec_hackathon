@@ -17,6 +17,14 @@ class LRUDict(OrderedDict, Generic[K, V]):
         super().__init__()
         self.maxlen = maxlen
         self.evicted = 0
+        self.budget = None
+        self.on_evict = None
+
+    def _evict(self):
+        key, value = self.popitem(last=False)
+        self.evicted += 1
+        if self.on_evict:
+            self.on_evict(key, value)
 
     def get_or_create(self, key: K, factory: Callable[[], V]) -> V:
         try:
@@ -25,18 +33,23 @@ class LRUDict(OrderedDict, Generic[K, V]):
             return value
         except KeyError:
             value = factory()
+            if self.budget:
+                self.budget.reserve()
+                value = self.budget.wrap(value)
             self[key] = value
             if len(self) > self.maxlen:
-                self.popitem(last=False)
-                self.evicted += 1
+                self._evict()
             return value
 
     def put(self, key: K, value: V) -> None:
+        if self.budget:
+            if key not in self:
+                self.budget.reserve()
+            value = self.budget.wrap(value)
         self[key] = value
         self.move_to_end(key)
         if len(self) > self.maxlen:
-            self.popitem(last=False)
-            self.evicted += 1
+            self._evict()
 
 
 def add_capped(items: list, value, cap: int) -> None:

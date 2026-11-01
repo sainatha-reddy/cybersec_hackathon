@@ -1,8 +1,8 @@
 """Decide whether an incident is a plain FAULT, an ATTACK, or UNCERTAIN.
 
 Each detector attaches weighted evidence pointing towards 'attack' or towards
-'benign fault'. Weights are combined with a noisy-OR (independent clues:
-1 - prod(1 - w)), so several weak clues add up but never exceed 1. The
+'benign fault'. Weights are combined with a noisy-OR heuristic:
+1 - prod(1 - w). Clues may be correlated; this is not a calibrated probability. The
 verdict needs a clear margin either way; otherwise the incident is marked
 UNCERTAIN instead of guessing. That keeps false alarms low while never
 silently dropping a suspicious finding.

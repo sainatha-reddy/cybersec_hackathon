@@ -63,7 +63,7 @@ class MtuDetector(Detector):
             out.append(sym)
 
         holes = defaultdict(lambda: {"flows": 0, "ids": [], "t": [], "retries": 0, "size": 0})
-        for flow in state.flows.flows.values():
+        for flow in state.flows.all_flows():
             for i, d in enumerate(flow.dirs):
                 if d.acked <= 1:
                     continue  # nothing ever acknowledged: not the black-hole pattern

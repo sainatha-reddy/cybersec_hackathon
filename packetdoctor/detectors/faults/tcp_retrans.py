@@ -18,7 +18,7 @@ class TcpRetransmissionDetector(Detector):
         groups: dict[tuple, dict] = defaultdict(
             lambda: {"retrans": 0, "data": 0, "kinds": Counter(), "ids": [], "flows": 0, "t0": None, "t1": None}
         )
-        for flow in state.flows.flows.values():
+        for flow in state.flows.all_flows():
             for d in flow.dirs:
                 if d.data_segments == 0:
                     continue

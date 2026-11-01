@@ -19,6 +19,9 @@ class Limits:
     max_flows: int = 200_000  # LRU-capped state tables
     max_hosts: int = 100_000
     max_evidence_per_symptom: int = 50  # packet ids kept per finding
+    max_state_items: int = 1_000_000
+    max_memory_mb: int = 512
+    max_incidents: int = 2_000
 
 
 @dataclass(frozen=True)

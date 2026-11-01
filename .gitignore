@@ -5,6 +5,8 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+tmp/
+.playwright-cli/
 build/
 dist/
 
@@ -17,6 +19,7 @@ dist/
 # Captures: only the curated samples/ are committed
 *.pcap
 *.pcapng
+*.cap
 !samples/*.pcap
 !samples/*.pcapng
 

@@ -1,0 +1,5530 @@
+{
+  "cases": 300,
+  "elapsed": 356.4453811645508,
+  "problems": 320,
+  "detected": 320,
+  "correct": 320,
+  "per_kind": {
+    "arp_spoofing": {
+      "correct": 22
+    },
+    "dhcp_starvation": {
+      "correct": 25
+    },
+    "dns_failure": {
+      "correct": 24
+    },
+    "dns_hijack": {
+      "correct": 18
+    },
+    "duplicate_ip": {
+      "correct": 27
+    },
+    "fragment_attack": {
+      "correct": 27
+    },
+    "high_latency": {
+      "correct": 21
+    },
+    "host_unreachable": {
+      "correct": 11
+    },
+    "mtu_blackhole": {
+      "correct": 25
+    },
+    "port_scan": {
+      "correct": 27
+    },
+    "rogue_dhcp": {
+      "correct": 24
+    },
+    "tcp_connection_aborted": {
+      "correct": 27
+    },
+    "tcp_connection_refused": {
+      "correct": 19
+    },
+    "tcp_retransmissions": {
+      "correct": 23
+    }
+  },
+  "false_attack_cases": 0,
+  "false_attack_seeds": [],
+  "no_problem_cases": 63,
+  "no_problem_clean": 58,
+  "no_problem_false_attack": 0,
+  "unexpected": {
+    "arp_conflict (FAULT)": 79,
+    "tcp_retransmissions (FAULT)": 49,
+    "high_latency (FAULT)": 43,
+    "dns_failure (FAULT)": 11,
+    "rogue_dhcp (UNCERTAIN)": 1
+  },
+  "appears_with": {
+    "dns_failure (FAULT)": {
+      "(none)": 11
+    },
+    "arp_conflict (FAULT)": {
+      "router_failover": 49,
+      "backup_dhcp": 14
+    },
+    "high_latency (FAULT)": {
+      "router_failover": 10,
+      "(none)": 9
+    },
+    "tcp_retransmissions (FAULT)": {
+      "legit_fragmentation": 15,
+      "(none)": 13
+    },
+    "rogue_dhcp (UNCERTAIN)": {
+      "busy_client": 1,
+      "backup_dhcp": 1
+    }
+  },
+  "negatives_in_false_attacks": {},
+  "missed_seeds": [],
+  "case_results": [
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94000
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "backup_dhcp",
+        "single_lost_packet"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94001
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "duplicate_dns_answer",
+        "client_resets"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94002
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94003
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94004
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "single_lost_packet",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94005
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "busy_client",
+        "cdn_answer_rotation",
+        "single_lost_packet"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94006
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94007
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94008
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94009
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94010
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "dns_typos",
+        "legit_fragmentation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94011
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ],
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "dns_typos"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94012
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ],
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94013
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "split_horizon_dns",
+        "router_failover",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94014
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "busy_client",
+        "legit_fragmentation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94015
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94016
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94017
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94018
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ],
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "legit_fragmentation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94019
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94020
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94021
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94022
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ],
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "backup_dhcp",
+        "dns_typos",
+        "client_resets"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94023
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94024
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94025
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "client_resets",
+        "busy_client",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94026
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94027
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ],
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "router_failover",
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94028
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "backup_dhcp",
+        "legit_fragmentation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94029
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94030
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ],
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94031
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "client_resets",
+        "router_failover",
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94032
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "legit_fragmentation",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94033
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ],
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "busy_client"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94034
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94035
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "dns_typos",
+        "router_failover",
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94036
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ],
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "dns_typos",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94037
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "busy_client"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94038
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ],
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "legit_fragmentation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94039
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ],
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "split_horizon_dns",
+        "client_resets"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94040
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94041
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ],
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer",
+        "split_horizon_dns",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94042
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ],
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94043
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer",
+        "legit_fragmentation",
+        "single_lost_packet"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94044
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "busy_client",
+        "backup_dhcp",
+        "split_horizon_dns"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94045
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "legit_fragmentation",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94046
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "backup_dhcp",
+        "client_resets",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94047
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ],
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet",
+        "legit_fragmentation",
+        "router_failover"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94048
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ],
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "dns_typos",
+        "duplicate_dns_answer",
+        "legit_fragmentation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94049
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ],
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94050
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ],
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "rogue_dhcp",
+          "UNCERTAIN"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "backup_dhcp",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94051
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "router_failover",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94052
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94053
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "split_horizon_dns",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94054
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94055
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer",
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94056
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94057
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ],
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94058
+    },
+    {
+      "outcomes": [],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "backup_dhcp",
+        "dns_typos"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94059
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94060
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer",
+        "router_failover"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94061
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer",
+        "cdn_answer_rotation",
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94062
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ],
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "split_horizon_dns",
+        "legit_fragmentation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94063
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94064
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet",
+        "dns_typos",
+        "legit_fragmentation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94065
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ],
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "legit_fragmentation",
+        "client_resets"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94066
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet",
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94067
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "busy_client"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94068
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94069
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94070
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94071
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94072
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ],
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "client_resets",
+        "backup_dhcp",
+        "router_failover"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94073
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "legit_fragmentation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94074
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94075
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "busy_client",
+        "legit_fragmentation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94076
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94077
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94078
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ],
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos",
+        "busy_client",
+        "legit_fragmentation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94079
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ],
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "split_horizon_dns",
+        "duplicate_dns_answer",
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94080
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94081
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94082
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ],
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer",
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94083
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ],
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "client_resets",
+        "dns_typos"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94084
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "cdn_answer_rotation",
+        "single_lost_packet"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94085
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer",
+        "client_resets"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94086
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ],
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94087
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ],
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94088
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ],
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "split_horizon_dns",
+        "client_resets"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94089
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ],
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "duplicate_dns_answer",
+        "busy_client"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94090
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet",
+        "legit_fragmentation",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94091
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer",
+        "client_resets"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94092
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "busy_client",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94093
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94094
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "dns_typos",
+        "legit_fragmentation",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94095
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94096
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94097
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ],
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94098
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94099
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "single_lost_packet",
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94100
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94101
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer",
+        "legit_fragmentation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94102
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "router_failover",
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94103
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94104
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94105
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "client_resets",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94106
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ],
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "client_resets"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94107
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ],
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94108
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94109
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94110
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94111
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94112
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ],
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94113
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "busy_client",
+        "backup_dhcp"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94114
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer",
+        "backup_dhcp",
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94115
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94116
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ],
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet",
+        "router_failover"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94117
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet",
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94118
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94119
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94120
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "legit_fragmentation",
+        "busy_client"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94121
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ],
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94122
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ],
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "split_horizon_dns"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94123
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ],
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94124
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94125
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94126
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94127
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94128
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94129
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "dns_typos",
+        "router_failover"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94130
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "cdn_answer_rotation",
+        "duplicate_dns_answer",
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94131
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94132
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94133
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94134
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94135
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ],
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94136
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ],
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "legit_fragmentation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94137
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos",
+        "client_resets",
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94138
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "client_resets",
+        "dns_typos"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94139
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94140
+    },
+    {
+      "outcomes": [],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "legit_fragmentation",
+        "router_failover"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94141
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ],
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "dns_typos"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94142
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ],
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "backup_dhcp"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94143
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94144
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ],
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94145
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ],
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94146
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ],
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "client_resets",
+        "cdn_answer_rotation",
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94147
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94148
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94149
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "duplicate_dns_answer",
+        "legit_fragmentation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94150
+    },
+    {
+      "outcomes": [],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "cdn_answer_rotation",
+        "router_failover",
+        "busy_client"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94151
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "router_failover"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94152
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94153
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94154
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "client_resets",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94155
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "busy_client",
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94156
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94157
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet",
+        "cdn_answer_rotation",
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94158
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94159
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "legit_fragmentation",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94160
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94161
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94162
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94163
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ],
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94164
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94165
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "busy_client",
+        "dns_typos"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94166
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ],
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94167
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "legit_fragmentation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94168
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ],
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet",
+        "backup_dhcp"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94169
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "split_horizon_dns",
+        "backup_dhcp",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94170
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ],
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "dns_typos",
+        "legit_fragmentation",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94171
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ],
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94172
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ],
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94173
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94174
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet",
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94175
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94176
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer",
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94177
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94178
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94179
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94180
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ],
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "split_horizon_dns",
+        "busy_client"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94181
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet",
+        "router_failover",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94182
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ],
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet",
+        "client_resets"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94183
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ],
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "cdn_answer_rotation",
+        "backup_dhcp"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94184
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94185
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ],
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "client_resets",
+        "busy_client",
+        "legit_fragmentation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94186
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ],
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94187
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "cdn_answer_rotation",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94188
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ],
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "single_lost_packet",
+        "router_failover"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94189
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94190
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "backup_dhcp",
+        "legit_fragmentation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94191
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "split_horizon_dns",
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94192
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ],
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "client_resets",
+        "duplicate_dns_answer",
+        "backup_dhcp"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94193
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94194
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ],
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "cdn_answer_rotation",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94195
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "split_horizon_dns"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94196
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer",
+        "router_failover",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94197
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ],
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "split_horizon_dns",
+        "busy_client"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94198
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94199
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer",
+        "legit_fragmentation",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94200
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "legit_fragmentation",
+        "single_lost_packet",
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94201
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "client_resets",
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94202
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94203
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet",
+        "legit_fragmentation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94204
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "client_resets",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94205
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "busy_client"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94206
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ],
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "cdn_answer_rotation",
+        "duplicate_dns_answer",
+        "client_resets"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94207
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "client_resets",
+        "busy_client",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94208
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "backup_dhcp",
+        "client_resets",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94209
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ],
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "backup_dhcp"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94210
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94211
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94212
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ],
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "dns_typos",
+        "client_resets"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94213
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94214
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ],
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "dns_typos"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94215
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94216
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94217
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94218
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94219
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet",
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94220
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "client_resets",
+        "legit_fragmentation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94221
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "dns_typos",
+        "router_failover",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94222
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ],
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos",
+        "busy_client",
+        "split_horizon_dns"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94223
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos",
+        "split_horizon_dns",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94224
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "busy_client"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94225
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ],
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "legit_fragmentation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94226
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94227
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "split_horizon_dns",
+        "duplicate_dns_answer",
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94228
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ],
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "cdn_answer_rotation",
+        "client_resets"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94229
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ],
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94230
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94231
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "backup_dhcp"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94232
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94233
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "cdn_answer_rotation",
+        "router_failover"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94234
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94235
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94236
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94237
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "split_horizon_dns",
+        "client_resets",
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94238
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ],
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94239
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ],
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation",
+        "router_failover",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94240
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94241
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94242
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ],
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94243
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ],
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94244
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94245
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94246
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ],
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94247
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ],
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer",
+        "client_resets",
+        "split_horizon_dns"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94248
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94249
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94250
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_retransmissions",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "legit_fragmentation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94251
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94252
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94253
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "single_lost_packet",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94254
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ],
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94255
+    },
+    {
+      "outcomes": [],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer",
+        "router_failover"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94256
+    },
+    {
+      "outcomes": [
+        [
+          "dns_failure",
+          "correct"
+        ],
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94257
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94258
+    },
+    {
+      "outcomes": [
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "backup_dhcp",
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94259
+    },
+    {
+      "outcomes": [],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "backup_dhcp",
+        "single_lost_packet"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94260
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "duplicate_dns_answer",
+        "router_failover",
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94261
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "client_resets",
+        "dns_typos"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94262
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ],
+        [
+          "high_latency",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94263
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ],
+        [
+          "dns_failure",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "high_latency",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "legit_fragmentation",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94264
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94265
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ],
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94266
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94267
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ],
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94268
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation",
+        "single_lost_packet",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94269
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94270
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94271
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94272
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94273
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "split_horizon_dns",
+        "legit_fragmentation",
+        "dns_typos"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94274
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp",
+        "duplicate_dns_answer"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94275
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94276
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "backup_dhcp"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94277
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_aborted",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "legit_fragmentation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94278
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ],
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94279
+    },
+    {
+      "outcomes": [
+        [
+          "dhcp_starvation",
+          "correct"
+        ],
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94280
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94281
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94282
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "client_resets"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94283
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ],
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "busy_client",
+        "router_failover"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94284
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "split_horizon_dns",
+        "router_failover",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94285
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94286
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94287
+    },
+    {
+      "outcomes": [
+        [
+          "tcp_connection_refused",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "dns_typos",
+        "backup_dhcp",
+        "busy_client"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94288
+    },
+    {
+      "outcomes": [
+        [
+          "host_unreachable",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "dns_failure",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94289
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94290
+    },
+    {
+      "outcomes": [
+        [
+          "port_scan",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94291
+    },
+    {
+      "outcomes": [
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94292
+    },
+    {
+      "outcomes": [
+        [
+          "duplicate_ip",
+          "correct"
+        ],
+        [
+          "fragment_attack",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94293
+    },
+    {
+      "outcomes": [
+        [
+          "dns_hijack",
+          "correct"
+        ],
+        [
+          "duplicate_ip",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "arp_conflict",
+          "FAULT"
+        ],
+        [
+          "arp_conflict",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "router_failover",
+        "legit_fragmentation",
+        "dns_typos"
+      ],
+      "n_expected": 2,
+      "correctly_linked": 0,
+      "seed": 94294
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94295
+    },
+    {
+      "outcomes": [
+        [
+          "arp_spoofing",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94296
+    },
+    {
+      "outcomes": [],
+      "unexpected": [],
+      "negatives": [
+        "duplicate_dns_answer",
+        "split_horizon_dns",
+        "dns_typos"
+      ],
+      "n_expected": 0,
+      "correctly_linked": 0,
+      "seed": 94297
+    },
+    {
+      "outcomes": [
+        [
+          "mtu_blackhole",
+          "correct"
+        ]
+      ],
+      "unexpected": [
+        [
+          "tcp_retransmissions",
+          "FAULT"
+        ]
+      ],
+      "negatives": [
+        "cdn_answer_rotation",
+        "split_horizon_dns"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94298
+    },
+    {
+      "outcomes": [
+        [
+          "rogue_dhcp",
+          "correct"
+        ]
+      ],
+      "unexpected": [],
+      "negatives": [
+        "single_lost_packet",
+        "cdn_answer_rotation"
+      ],
+      "n_expected": 1,
+      "correctly_linked": 0,
+      "seed": 94299
+    }
+  ]
+}

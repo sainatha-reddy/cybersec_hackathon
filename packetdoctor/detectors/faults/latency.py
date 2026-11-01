@@ -27,7 +27,7 @@ class LatencyDetector(Detector):
 
     def finalize(self, state):
         handshake = []  # (ts, rtt, server, ids)
-        for flow in state.flows.flows.values():
+        for flow in state.flows.all_flows():
             rtt = flow.handshake_rtt
             if rtt is not None:
                 handshake.append((flow.syn_ts, rtt, flow.server[0], [flow.syn_idx]))
@@ -93,7 +93,7 @@ class LatencyDetector(Detector):
 
     def _zero_window(self, state):
         per_host = defaultdict(lambda: {"count": 0, "ids": [], "flows": 0, "t": [], "peers": set()})
-        for flow in state.flows.flows.values():
+        for flow in state.flows.all_flows():
             for i, d in enumerate(flow.dirs):
                 if d.zero_windows < self.t.zero_window_min:
                     continue

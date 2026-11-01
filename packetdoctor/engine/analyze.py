@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+import time
+from dataclasses import replace
+from datetime import datetime, timezone, timedelta
 
 from .. import __version__
 from ..config import DEFAULT_SETTINGS, Settings
@@ -23,6 +25,7 @@ TIMELINE_POINTS = 300
 
 
 def analyze(path: str | os.PathLike, settings: Settings = DEFAULT_SETTINGS, anonymize: bool = False) -> dict:
+    started = time.monotonic()
     result = detect(path, settings)
     state, stats = result.state, result.stats
     gw_ip, gw_mac = state.hosts.gateway()
@@ -37,8 +40,15 @@ def analyze(path: str | os.PathLike, settings: Settings = DEFAULT_SETTINGS, anon
         inc["id"] = f"INC-{n}"
 
     duration = max(0.0, t_end - t0)
-    score, grade, summary = health_score(incidents, duration)
-    evidence = _collect_evidence(path, settings, {i for inc in incidents for i in inc["packet_ids"]}, t0)
+    wanted = {packet_id for incident in incidents for packet_id in incident["packet_ids"]}
+    remaining = max(0, settings.limits.timeout_seconds - (time.monotonic() - started))
+    evidence_settings = replace(settings, limits=replace(settings.limits, timeout_seconds=remaining))
+    evidence = _collect_evidence(path, evidence_settings, wanted, t0, result.evidence)
+    missing = len(wanted - {int(packet_id) for packet_id in evidence})
+    if missing:
+        stats.warnings.append(f"Evidence incomplete: {missing} cited packet(s) could not be resolved within the remaining budget.")
+    coverage = "insufficient_data" if not stats.packets_decoded else "partial" if stats.warnings or result.detector_errors else "complete"
+    score, grade, summary = health_score(incidents, duration, coverage)
 
     report = {
         "tool": {"name": "PacketDoctor", "version": __version__},
@@ -50,9 +60,10 @@ def analyze(path: str | os.PathLike, settings: Settings = DEFAULT_SETTINGS, anon
             "dns_servers": sorted(dns_servers),
             "hosts": _hosts(state),
             "flows": state.flows.total_flows,
-            "dns_queries": len(state.dns.queries),
+            "dns_queries": state.dns.total_queries,
         },
         "health": {"score": score, "grade": grade, "summary": summary},
+        "analysis": {"coverage": coverage, "evidence_complete": missing == 0, "elapsed_s": round(time.monotonic() - started, 3)},
         "summary": {
             "incidents": len(incidents),
             "attacks": sum(1 for i in incidents if i["verdict"] == "ATTACK"),
@@ -108,7 +119,13 @@ def _incident(g: Group, namer: Namer, t0: float) -> dict:
             if verdict == Verdict.FAULT
             else "This is suspicious but not conclusive; a person should check it. "
         )
-        explanation["what"] = lead + top[0].lower() + top[1:] + ". " + explanation["what"]
+        explanation["what"] = lead + top[0].lower() + top[1:] + "."
+        explanation["cause"] = "A legitimate configuration change, an alternate service, or unwanted activity; the available evidence does not establish malicious intent."
+        explanation["fixes"] = [
+            "Verify whether the activity or configuration change was authorised before isolating a device.",
+            "Compare the cited packets with the expected gateway, DNS and DHCP settings.",
+            "Ask the network administrator to investigate any unrecognised activity and preserve the capture evidence.",
+        ]
     return {
         "id": "",
         "kind": root.kind,
@@ -116,6 +133,7 @@ def _incident(g: Group, namer: Namer, t0: float) -> dict:
         "detector_category": root.category.value,
         "verdict": verdict.value,
         "confidence": confidence,
+        "evidence_score": confidence,
         "attack_score": a_score,
         "benign_score": b_score,
         "severity": _severity(members, root, verdict),
@@ -158,6 +176,9 @@ def _brief(s: Symptom, t0: float) -> dict:
         "rel_start": round(s.t_start - t0, 3),
         "rel_end": round(s.t_end - t0, 3),
         "packet_ids": s.packet_ids[:20],
+        "hosts": s.hosts,
+        "metrics": s.metrics,
+        "verdict": decide(s.category, s.attack_evidence, s.benign_evidence)[0].value,
     }
 
 
@@ -215,7 +236,7 @@ def _main_time_window(state, stats: IngestStats) -> tuple[float, float]:
 
 def _capture_info(stats: IngestStats, t0: float | None = None, duration: float | None = None) -> dict:
     first = t0 if t0 else stats.first_ts
-    start = datetime.fromtimestamp(first, timezone.utc).isoformat(timespec="seconds") if first else None
+    start = (datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(seconds=first)).isoformat(timespec="seconds") if first is not None else None
     return {
         "file_name": stats.file_name,
         "format": stats.file_format,
@@ -261,31 +282,33 @@ def _timeline(state, incidents: list[dict], t0: float, t_end: float) -> dict:
     return {"bucket_s": bucket, "series": points, "events": events}
 
 
-def _collect_evidence(path, settings: Settings, wanted: set[int], t0: float) -> dict:
+def _collect_evidence(path, settings: Settings, wanted: set[int], t0: float, cached=None) -> dict:
     """Second, cheap pass over the file to describe only the packets cited as evidence."""
     if not wanted:
         return {}
     out = {}
+    for packet_id in wanted:
+        if cached and packet_id in cached:
+            out[str(packet_id)] = _evidence_row(cached[packet_id], t0)
+    if len(out) == len(wanted):
+        return out
     last = max(wanted)
     stats = IngestStats()
     try:
         for rec in read_capture(path, stats, settings):
             if rec.idx in wanted:
-                out[str(rec.idx)] = {
-                    "no": rec.idx,
-                    "time": round(rec.ts - t0, 6),
-                    "src": rec.src_ip or rec.src_mac or "",
-                    "dst": rec.dst_ip or rec.dst_mac or "",
-                    "src_mac": rec.src_mac or "",
-                    "proto": _proto(rec),
-                    "length": rec.length,
-                    "info": rec.summary(),
-                }
+                out[str(rec.idx)] = _evidence_row(rec, t0)
             if rec.idx >= last:
                 break
     except Exception:
         pass  # evidence is best-effort; the analysis itself already succeeded
     return out
+
+
+def _evidence_row(rec, t0):
+    return {"no": rec.idx, "time": round(rec.ts - t0, 6), "src": rec.src_ip or rec.src_mac or "",
+            "dst": rec.dst_ip or rec.dst_mac or "", "src_mac": rec.src_mac or "", "proto": _proto(rec),
+            "length": rec.length, "info": rec.summary()}
 
 
 def _proto(rec) -> str:

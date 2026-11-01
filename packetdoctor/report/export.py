@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from pathlib import Path
 
 from .._scapy import PcapNgReader, PcapReader, wrpcap
 from ..config import DEFAULT_SETTINGS, Settings
 from ..ingest import validate_capture
+from ..ingest.loader import BoundedCaptureFile, CaptureError
 
 
 def export_evidence(capture: str | os.PathLike, report: dict, out_dir: str | os.PathLike, settings: Settings = DEFAULT_SETTINGS) -> list[Path]:
@@ -29,8 +31,12 @@ def export_evidence(capture: str | os.PathLike, report: dict, out_dir: str | os.
     last = max(wanted)
     reader_cls = PcapNgReader if fmt == "pcapng" else PcapReader
     idx = 0
-    with reader_cls(str(capture)) as reader:
+    deadline = time.monotonic() + settings.limits.timeout_seconds
+    source = BoundedCaptureFile(capture, settings.limits.max_packet_bytes + 65_536, deadline)
+    with reader_cls(source) as reader:
         while idx < last:
+            if time.monotonic() >= deadline:
+                raise CaptureError("Evidence export reached its time limit.")
             try:
                 pkt = reader.read_packet()
             except EOFError:

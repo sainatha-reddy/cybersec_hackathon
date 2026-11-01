@@ -461,6 +461,12 @@ def benign_title(s: Symptom) -> str:
         return f"{m['scanner']} opened connections to many ports or devices"
     if s.kind == "arp_spoofing":
         return f"Device {m['attacker_mac']} took over {', '.join(m.get('impersonated', {}))}"
+    if s.kind == "dns_hijack":
+        return "Inconsistent DNS answers require investigation"
+    if s.kind == "fragment_attack":
+        return "Unusual IP fragments require investigation"
+    if s.kind == "dhcp_starvation":
+        return "Many DHCP requests require investigation"
     return s.title
 
 FRIENDLY_KIND = {

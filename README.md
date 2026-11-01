@@ -18,22 +18,24 @@ PacketDoctor treats a capture the way a doctor treats a patient:
 
 | Step | What PacketDoctor does |
 |---|---|
-| **Symptoms** | 16 detectors written by us read every packet and record specific observations, each tied to packet numbers. |
+| **Symptoms** | 15 detector classes implement multiple finding types and record observations tied to packet numbers. |
 | **Diagnosis** | A correlation engine groups symptoms into incidents and works out cause and effect. For example: *"ARP spoofing is the cause; the 30 retransmissions after t=58 s are a consequence, not a separate problem."* |
-| **Verdict** | Every incident is labelled **FAULT**, **ATTACK** or **UNCERTAIN**, with a confidence score and the list of clues for *both* sides. If the clues don't clearly point one way, the incident is marked UNCERTAIN instead of raising a false alarm. |
+| **Verdict** | Every incident is labelled **FAULT**, **ATTACK** or **UNCERTAIN**, with a heuristic evidence score and clues for both sides. The score is not a calibrated probability. Ambiguous findings require human investigation. |
 | **Prescription** | Beginner-friendly explanation: what happened, why it matters, the likely cause, and numbered steps to fix it. |
-| **Health score** | One number (0 to 100) for the whole capture, plus a timeline of when each problem happened. |
+| **Health score** | A 0–100 score for observed traffic, with separate complete, partial, and insufficient-data status. Empty or unusable captures are not rated healthy. |
 
 It runs **fully offline**: no cloud, no AI service, no API keys. Captures never leave the machine.
 
 ### What makes it different from existing tools
 
 - **Wireshark's "Expert Info"** lists thousands of individual events. PacketDoctor groups them into a handful of incidents and explains them.
-- **IDS tools (Snort, Suricata, Zeek)** alert on signatures but don't diagnose ordinary faults, and they don't explain them to beginners.
+- **Complementary to IDS tools:** PacketDoctor focuses on explaining small-network faults alongside suspicious activity, rather than operating as a continuous monitoring or prevention platform.
 - **Telling fault from attack** is a first-class output. Each verdict comes with weighted evidence for and against, and with explicit benign explanations that were checked. Examples: "a backup DHCP server with the same settings", "a router failover", "split-horizon DNS".
 - **Root-cause chains** show *knock-on effects*: rogue DHCP leads to DNS hijacking, a duplicate IP leads to dropped connections, an MTU black hole leads to retransmissions. Fix the root and the rest goes away.
 - **Relay detection** spots a man-in-the-middle *physically*: the same packet appears twice on the wire, re-sent by another device's MAC address within milliseconds.
-- **Measured, not just claimed.** A randomised benchmark of 300 labelled captures (problems with random parameters plus benign look-alikes) scores **305/305 problems found with the correct verdict and 0 false attack verdicts**. Public real-world captures were also tested. See [Evaluation](#evaluation).
+- **Reproducible evaluation.** The corrected benchmark matches planted packet evidence one-to-one and independently checks linked verdicts. Full case results, source hashes for four public captures, and regression tests are supplied. See [Evaluation](#evaluation).
+
+See [completed improvements and verification](docs/HACKATHON_IMPROVEMENTS.md) for the hardening checklist, observed test results and documented boundaries.
 
 ---
 
@@ -80,7 +82,7 @@ It runs **fully offline**: no cloud, no AI service, no API keys. Captures never 
 Requires **Python 3.10 or newer**. No Wireshark, tshark, Npcap or libpcap is needed, because captures are read with Scapy's pure-Python reader.
 
 ```bash
-git clone <this-repo-url> packetdoctor
+git clone https://github.com/sainatha-reddy/cybersec_hackathon.git packetdoctor
 cd packetdoctor
 python -m venv .venv
 
@@ -89,8 +91,8 @@ python -m venv .venv
 # macOS / Linux
 source .venv/bin/activate
 
-pip install -r requirements.txt
-pip install -e .
+python -m pip install -r requirements.lock
+python -m pip install --no-deps -e .
 ```
 
 ### Run it on the samples
@@ -104,6 +106,9 @@ packetdoctor analyze samples/rogue_dhcp.pcap --json report.json --html report.ht
 
 # share safely: addresses pseudonymised
 packetdoctor analyze samples/arp_spoofing.pcap --anonymize
+
+# customise supervised job budgets
+packetdoctor analyze samples/mixed_fault_and_attack.pcap --timeout 60 --memory-mb 256
 
 # one .pcap per incident with just the evidence packets, for Wireshark
 packetdoctor analyze samples/mixed_fault_and_attack.pcap --export-evidence evidence/
@@ -120,7 +125,20 @@ packetdoctor serve
 pytest
 ```
 
-123 tests cover every detector on every sample, benign look-alikes (backup DHCP server, router failover, busy client, split-horizon DNS, client-side resets, legitimate fragmentation), loss seen from either side of a link, clock jumps, the verdict and correlation logic, a smoke run of the accuracy benchmark, the CLI, the web API and its security headers, fuzzed and truncated captures, an address-flood capture against the memory limits, hostile strings in packets, and a scan for committed secrets.
+140 tests cover the supplied scenarios and regressions including IPv6 privacy, DNS/fragment identifier reuse, extreme timestamps, truncated framing and partial coverage, causal timing, TCP tuple reuse, retained evidence across flow eviction, state budgets, worker memory/cancellation/deadlines, background-job admission and cleanup, streamed upload limits, and benchmark scoring. The suite also covers benign look-alikes, malformed captures, CLI/API behaviour, safe rendering, and the repository's secret-pattern check.
+
+The lock file pins the runtime and test dependency graph used for evaluation. A first-time installation needs internet access; analysis is offline. If an existing virtual environment points to a Python installation that has been moved or removed, create a new environment with an installed Python rather than copying that environment between machines.
+
+The wheel includes the 17 synthetic examples as well as the dashboard assets. `packetdoctor samples` lists their installed locations. Source checkouts can use the relative `samples/` commands above.
+
+For browser regression checks, start `packetdoctor serve`, then use an available Playwright CLI installation:
+
+```bash
+playwright-cli open http://127.0.0.1:8000
+playwright-cli run-code --filename=scripts/browser_check.js
+```
+
+The checklist checks desktop/tablet/mobile overflow, keyboard focus, filters, timeline navigation, evidence, privacy, empty/error states, contrast, reduced motion, cancellation, and JSON/offline HTML downloads. Screenshots are written to `tmp/ui-checks/`. Playwright is a development check and is not required to run PacketDoctor.
 
 ---
 
@@ -155,19 +173,20 @@ All samples are **synthetic**. `samples/generate.py` builds them in memory with 
 
 | Metric | Result |
 |---|---|
-| Problems found with the correct verdict | **305 / 305** |
-| Captures with a false ATTACK verdict | **0 / 300** |
-| Problem-free captures reported completely clean | 66 / 80 (the other 14 contain the router-failover look-alike, correctly reported as an address-conflict *fault*) |
+| Corrected synthetic evaluation | [Current results and per-type metrics](docs/EVALUATION.md) |
+| Every case, including misses and extra findings | [Machine-readable results](docs/evaluation-results.json) |
+| Independent public examples with pinned SHA-256 hashes | [Source manifest](benchmark/public-captures.json) and [observed results](docs/public-capture-results.json) |
 
 The benchmark earned its keep: the first trial scored 94% and exposed slow port scans being marked UNCERTAIN, short DNS outages being diluted, and noisy busy-client reports. All three were fixed. These are synthetic captures, so the numbers measure robustness to parameters, timing, noise and combinations, not every quirk of real networks.
 
-**Real captures.** The tool was also run on public Wireshark sample captures: an ARP storm, the teardrop attack, DHCP, DNS, TCP ECN, SMB, and an ISP router boot. That surfaced four real-world issues, all now fixed:
-- **Clock jumps:** a device booting without a clock stamps packets near 1970.
-- **DNS records without data:** SOA records have no plain `rdata` field.
-- **False alarms from client resets:** browsers routinely reset their own connections.
-- **A misleading label:** "Rogue DHCP" was shown next to a benign verdict.
+**Public captures.** Four named examples from the Wireshark sample collection were rerun with recorded hashes: teardrop is an ATTACK, the ARP storm is a FAULT, and the DHCP/DNS examples produce no findings. They are downloaded explicitly and are not redistributed. Reproduce both evaluations with:
 
-Results after the fixes: the router's ARP storm is correctly a FAULT, the teardrop capture is an ATTACK, the router boot shows only a benign "extra DHCP server", and the 6 normal captures produce no false alarms. These files aren't redistributed because their licences are unclear.
+```bash
+python benchmark/run.py --cases 300 --seed 94000
+python benchmark/real_captures.py --fetch
+```
+
+The synthetic scorer requires shared planted packet evidence and independently classified verdicts for roots and linked findings. Linked findings receive no automatic credit; unmatched findings are reported. Seed 94000 is separate from the original development seed 2026. This is reproducible synthetic validation and a small public-capture check, not an estimate of accuracy across all networks. The public-source descriptions and expected outcomes are documented in the manifest; `--record-hashes` is a maintainer operation for explicitly accepting a source update.
 
 ---
 
@@ -190,7 +209,7 @@ flowchart LR
     I --> J3[JSON / HTML]
 ```
 
-- **One streaming pass.** Each packet is decoded once and handed to every detector, and memory stays flat whatever the file size. A second, cheap pass fetches only the packets cited as evidence.
+- **Bounded streaming analysis.** Packets update shared state and detectors in one pass. A bounded cache resolves evidence for ordinary captures without re-reading; larger captures may use the remaining job budget for an evidence pass. Missing evidence and state evictions are disclosed.
 - **Detectors never touch Scapy.** They see a small `PacketRecord` (header fields only, no payload), so all detection logic is ours and independent of the parsing library.
 - **The verdict maths.** Each clue has a weight from 0 to 1, and clues are combined as `1 − Π(1 − w)`. An incident is an ATTACK only when attack clues reach 0.6 *and* beat the benign clues by 0.25. A clear benign margin makes it a FAULT; anything in between is UNCERTAIN.
 - **Health score.** The score starts at 100. Each incident subtracts points by severity, scaled up for attacks and for how much of the capture it covers.
@@ -208,7 +227,7 @@ packetdoctor/
 samples/       generate.py + 17 sample captures
 benchmark/     run.py (randomised accuracy benchmark)
 docs/          EVALUATION.md
-tests/         123 tests
+tests/         140 tests
 ```
 
 ---
@@ -218,11 +237,11 @@ tests/         123 tests
 The full details are in [SECURITY.md](SECURITY.md). In short:
 
 - **Untrusted input.** The file type is identified by magic bytes, never by extension. File size, packet count, packet size and wall-clock time are all capped. Captures are streamed, never loaded whole. A malformed packet is skipped and counted; a truncated or corrupt file ends the analysis cleanly. All of this is fuzz-tested.
-- **Bounded memory.** Every flow, host and DNS table has an LRU size cap, so an address-flood capture cannot exhaust RAM (tested).
-- **No data leaks.** Payloads are never stored, only header fields. Nothing is sent anywhere. Reports are written owner-readable only where the OS supports it. Error messages never include stack traces or full paths. Anonymise mode uses keyed-hash pseudonyms with a per-run random key.
-- **Web dashboard.** It binds to 127.0.0.1 by default. Uploads are streamed to a randomly named file in a private temp directory with a size cap, then deleted. Samples are served from an allow-list (no path traversal). A strict Content Security Policy with no inline scripts is set, along with `X-Frame-Options: DENY`, `nosniff` and `no-store`. API docs are disabled. Concurrent analyses are limited.
+- **Resource budgets.** Shared collection budgets stop analysis with a partial-result warning, and LRU evictions are disclosed. CLI and web analysis run in supervised subprocesses with whole-job deadlines, cancellation, and a monitored memory budget. Linux additionally applies an address-space limit where available. pcapng block reads are bounded before allocation.
+- **Privacy.** Reports retain selected header metadata, not application payload bytes. Nothing is sent anywhere during analysis. IPv4, IPv6, and MAC addresses are pseudonymised consistently with a random per-run key; DNS names and other context remain. Evidence-pcap export deliberately preserves original bytes and cannot be combined with anonymisation.
+- **Web dashboard.** It binds to 127.0.0.1 by default. Request bytes and admission are bounded before multipart parsing; copied uploads also have a file-size cap. Two analysis slots are available without an unbounded queue. Uploads are removed after processing or cancellation. Results are held briefly in memory and expire after two minutes, or are released after download to the page. Samples use an allow-list. Strict CSP, framing, MIME, and no-store headers are set, and API docs are disabled.
 - **No injection.** Strings from packets (DNS names and so on) are stripped of control characters, so they can't hijack terminals. The browser renderer uses `textContent` only, never `innerHTML` (enforced by a test). JSON embedded in HTML reports is escaped so it cannot close its `<script>` tag (tested with a hostile payload).
-- **No secrets.** There are no keys, tokens or passwords anywhere; a test scans the repository. `pip-audit` found no known vulnerabilities in the pinned dependencies.
+- **Audit evidence.** A test scans tracked files for secret patterns. The exact dependency set is in `requirements.lock`; audit output is recorded in `docs/dependency-audit.json`. These checks have a defined scope and date, rather than proving the absence of every possible vulnerability.
 
 ---
 
@@ -230,7 +249,7 @@ The full details are in [SECURITY.md](SECURITY.md). In short:
 
 - **Throughput** is about 4–5k packets per second on a laptop (Scapy's dissector is the bottleneck), so a 100k-packet capture takes roughly 25 s. The time limit and packet limit are configurable.
 - **Coverage.** Detection is IPv4-focused. IPv6 TCP/UDP traffic and ICMPv6 "packet too big" are handled, but NDP spoofing is not yet detected. SYN floods and brute-force logins are not yet covered.
-- **Clue weights** were tuned by hand. The benchmark shows they generalise across randomised synthetic scenarios, but they haven't been calibrated on large real-world datasets.
+- **Clue weights** were tuned by hand. Scores combine potentially correlated clues and are not calibrated attack probabilities. Correlation rules describe likely relationships rather than proving causation.
 - **Encrypted traffic.** Application-layer problems inside encrypted traffic (TLS/QUIC) are out of scope; the tool diagnoses the network layers below.
 - **Vantage point matters.** Relay detection needs a capture point (mirror/SPAN port or the victim itself) that sees both legs of the relayed traffic.
 - **Thresholds.** These live in `packetdoctor/config.py` and are tuned for small networks.
@@ -248,6 +267,9 @@ The full details are in [SECURITY.md](SECURITY.md). In short:
 | [Typer](https://typer.tiangolo.com) | MIT | Command-line interface |
 | [Rich](https://github.com/Textualize/rich) | MIT | Coloured terminal output |
 | [pytest](https://pytest.org), [httpx](https://www.python-httpx.org) | MIT / BSD-3 | Tests |
+| [packaging](https://packaging.pypa.io/) | Apache-2.0 / BSD-2-Clause | Development helper for regenerating the dependency lock |
+
+Optional development tools used for verification are Playwright CLI for real-browser checks and `pip-audit` for dependency advisory checks. Public evaluation captures are retrieved explicitly from the Wireshark sample collection; no external API is used for diagnosis.
 
 All detection, correlation, verdict, explanation and visualisation code (including the SVG timeline and the report renderer) was written by the team during the hackathon. No external APIs or AI services are used at runtime.
 

@@ -17,6 +17,7 @@ cases without problems we check that nothing was reported as an attack.
 from __future__ import annotations
 
 import argparse
+import json
 import random
 import sys
 import tempfile
@@ -325,17 +326,22 @@ def build_case(seed: int, out: Path) -> dict:
     post: list = []
     try:
         kinds = []
+        planted = []
         r = rng.random()
         n_problems = 0 if r < 0.25 else 1 if r < 0.7 else 2
         if n_problems and rng.random() < 0.06:
             g.baseline(cap, 0, 60, step=(rng.uniform(0.8, 2), rng.uniform(2.5, 5)))
+            before = len(cap.pkts)
             kinds.append(gateway_down(cap, 62.0, rng))
+            planted.append((kinds[-1], cap.pkts[before:]))
             negs = []
         else:
             g.baseline(cap, 0, DURATION, step=(rng.uniform(0.8, 2), rng.uniform(2.5, 5)))
             for slot, name in zip(SLOTS, rng.sample(list(PROBLEMS), n_problems)):
                 fn = PROBLEMS[name]
+                before = len(cap.pkts)
                 kinds.append(fn(cap, *slot, rng, post) if name == "arp_spoofing" else fn(cap, *slot, rng))
+                planted.append((kinds[-1], cap.pkts[before:]))
             negs = rng.sample(list(NEGATIVES), rng.randint(0, 3))
             for name in negs:
                 NEGATIVES[name](cap, rng)
@@ -343,7 +349,11 @@ def build_case(seed: int, out: Path) -> dict:
             fn(cap)
         path = out / f"case{seed}.pcap"
         cap.write(path)
-        return {"seed": seed, "path": path, "expected": kinds, "negatives": negs}
+        positions = {id(packet): index for index, packet in enumerate(cap.pkts, 1)}
+        instances = [{"verdict": verdict, "kind": kind, "packet_ids": [positions[id(packet)] for packet in packets if id(packet) in positions],
+                      "t_start": min(float(packet.time) for packet in packets), "t_end": max(float(packet.time) for packet in packets)}
+                     for (verdict, kind), packets in planted if packets]
+        return {"seed": seed, "path": path, "expected": instances, "negatives": negs}
     finally:
         g.MACS.clear()
         g.MACS.update(saved_macs)
@@ -351,25 +361,31 @@ def build_case(seed: int, out: Path) -> dict:
 
 def score_case(case: dict) -> dict:
     report = analyze(case["path"])
-    found = {}  # kind -> verdict of the incident containing it (root first)
-    for inc in report["incidents"]:
-        found.setdefault(inc["kind"], (inc["verdict"], "root"))
-    for inc in report["incidents"]:
-        for sub in inc["related"] + inc["consequences"]:
-            found.setdefault(sub["kind"], (inc["verdict"], "linked"))
-    expected_kinds = {k for _, k in case["expected"]}
+    found = []
+    for incident in report["incidents"]:
+        found.append({**incident, "placement": "root"})
+        for sub in incident["related"] + incident["consequences"]:
+            found.append({**sub, "verdict": sub.get("verdict", incident["verdict"]), "placement": "linked"})
+    matched = set()
     outcomes = []
-    for verdict, kind in case["expected"]:
-        if kind not in found:
+    linked_correct = 0
+    for expected in case["expected"]:
+        if not isinstance(expected, dict):
+            expected = {"verdict": expected[0], "kind": expected[1]}
+        verdict, kind = expected["verdict"], expected["kind"]
+        candidates = [(index, finding) for index, finding in enumerate(found)
+                      if index not in matched and finding["kind"] == kind
+                      and (not expected.get("packet_ids") or set(expected["packet_ids"]) & set(finding.get("packet_ids", [])))]
+        if not candidates:
             outcomes.append((kind, "missed"))
-        elif found[kind][0] == verdict or found[kind][1] == "linked":
-            outcomes.append((kind, "correct"))
         else:
-            outcomes.append((kind, f"wrong verdict ({found[kind][0]})"))
-    unexpected = [
-        (inc["kind"], inc["verdict"]) for inc in report["incidents"] if inc["kind"] not in expected_kinds
-    ]
-    return {"outcomes": outcomes, "unexpected": unexpected, "negatives": case["negatives"], "n_expected": len(case["expected"])}
+            index, finding = max(candidates, key=lambda candidate: len(set(expected.get("packet_ids", [])) & set(candidate[1].get("packet_ids", []))))
+            matched.add(index)
+            correct = finding["verdict"] == verdict
+            outcomes.append((kind, "correct" if correct else f"wrong verdict ({finding['verdict']})"))
+            linked_correct += int(correct and finding["placement"] == "linked")
+    unexpected = [(finding["kind"], finding["verdict"]) for index, finding in enumerate(found) if index not in matched]
+    return {"outcomes": outcomes, "unexpected": unexpected, "negatives": case["negatives"], "n_expected": len(case["expected"]), "correctly_linked": linked_correct}
 
 
 def run(cases: int, seed: int) -> dict:
@@ -384,7 +400,13 @@ def run(cases: int, seed: int) -> dict:
             case["path"].unlink()
             if (i + 1) % 25 == 0:
                 print(f"  {i + 1}/{cases} cases ({time.time() - started:.0f}s)", flush=True)
-    return summarise(results, time.time() - started)
+    summary = summarise(results, time.time() - started)
+    summary["case_results"] = results
+    return summary
+
+
+def _false_attack(result):
+    return any(verdict == "ATTACK" for _, verdict in result["unexpected"]) or any(outcome == "wrong verdict (ATTACK)" for _, outcome in result["outcomes"])
 
 
 def summarise(results: list[dict], elapsed: float) -> dict:
@@ -395,7 +417,7 @@ def summarise(results: list[dict], elapsed: float) -> dict:
     total = sum(sum(c.values()) for c in per_kind.values())
     correct = sum(c["correct"] for c in per_kind.values())
     detected = sum(sum(v for k, v in c.items() if k != "missed") for c in per_kind.values())
-    false_attacks = [r for r in results if any(v == "ATTACK" for _, v in r["unexpected"])]
+    false_attacks = [result for result in results if _false_attack(result)]
     unexpected = Counter(f"{k} ({v})" for r in results for k, v in r["unexpected"])
     # which hard negatives were present when each extra finding appeared
     appears_with = defaultdict(Counter)
@@ -406,7 +428,7 @@ def summarise(results: list[dict], elapsed: float) -> dict:
     no_problem = [r for r in results if r["n_expected"] == 0]
     neg_trouble = Counter()
     for r in results:
-        if any(v == "ATTACK" for _, v in r["unexpected"]):
+        if _false_attack(r):
             for n in r["negatives"]:
                 neg_trouble[n] += 1
     return {
@@ -420,7 +442,7 @@ def summarise(results: list[dict], elapsed: float) -> dict:
         "false_attack_seeds": [r["seed"] for r in false_attacks][:20],
         "no_problem_cases": len(no_problem),
         "no_problem_clean": sum(1 for r in no_problem if not r["unexpected"]),
-        "no_problem_false_attack": sum(1 for r in no_problem if any(v == "ATTACK" for _, v in r["unexpected"])),
+        "no_problem_false_attack": sum(1 for result in no_problem if _false_attack(result)),
         "unexpected": dict(unexpected.most_common()),
         "appears_with": {k: dict(c.most_common(2)) for k, c in appears_with.items()},
         "negatives_in_false_attacks": dict(neg_trouble),
@@ -439,7 +461,8 @@ def markdown(s: dict, seed: int) -> str:
         "0–2 problems with randomised parameters (loss rate, scan speed and size, poisoning interval, "
         "outage length, number of forged answers, flood size, ...) placed in separate time slots, and 0–3 "
         "*hard negatives*: benign situations that resemble problems. A problem counts as **correct** when it "
-        "is found with the right verdict, or is correctly linked as a consequence of another incident.",
+        "is matched one-to-one to planted packet evidence and has the correct independent verdict. "
+        "Linked findings receive no automatic credit. Unmatched root and linked findings are counted separately.",
         "",
         "## Headline numbers",
         "",
@@ -494,9 +517,9 @@ def markdown(s: dict, seed: int) -> str:
         "",
         "* The captures are synthetic and written with the same packet primitives as the bundled samples, so this measures robustness to "
         "parameter changes, timing, background noise and combinations, not every quirk of real networks.",
-        "* Real captures were checked separately (public Wireshark sample captures: ARP storm, teardrop, DHCP, DNS, TCP ECN, SMB, an ISP router boot). "
-        "Those tests found and fixed: clock jumps, DNS records without data, false alarms from client-side resets and a misleading label. "
-        "They are not redistributed here because their licences are unclear.",
+        "* Four named public Wireshark captures are independently reproducible using `python benchmark/real_captures.py --fetch`. "
+        "Source URLs and SHA-256 hashes are pinned in `benchmark/public-captures.json`; observed results are in `docs/public-capture-results.json`. "
+        "The capture files are not redistributed. This small check does not establish production-network accuracy.",
         "",
     ]
     return "\n".join(lines)
@@ -516,3 +539,4 @@ if __name__ == "__main__":
     if not args.no_write:
         (ROOT / "docs").mkdir(exist_ok=True)
         (ROOT / "docs" / "EVALUATION.md").write_text(md, encoding="utf-8")
+        (ROOT / "docs" / "evaluation-results.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")

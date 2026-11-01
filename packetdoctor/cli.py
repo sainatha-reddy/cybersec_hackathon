@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -39,8 +40,8 @@ GRADE_STYLE = {"Healthy": "green", "Minor issues": "yellow", "Degraded": "dark_o
 SAMPLES_DIR = Path(__file__).resolve().parent.parent / "samples"
 
 
-def _settings(max_mb: int) -> Settings:
-    return Settings(limits=Limits(max_file_bytes=max_mb * 1024 * 1024))
+def _settings(max_mb: int, timeout: float = 300, memory_mb: int = 512) -> Settings:
+    return Settings(limits=Limits(max_file_bytes=max_mb * 1024 * 1024, timeout_seconds=timeout, max_memory_mb=memory_mb))
 
 
 @app.command()
@@ -50,19 +51,21 @@ def analyze(
     html_out: Optional[Path] = typer.Option(None, "--html", help="also write a self-contained HTML report"),
     anonymize: bool = typer.Option(False, "--anonymize", help="replace IP and MAC addresses with pseudonyms in all output"),
     evidence: int = typer.Option(5, "--evidence", "-e", help="evidence packets to print per incident (0 = none)"),
-    max_mb: int = typer.Option(500, "--max-mb", help="refuse captures larger than this many MB"),
+    max_mb: int = typer.Option(500, "--max-mb", min=1, help="refuse captures larger than this many MB"),
+    timeout: float = typer.Option(300, "--timeout", min=0.1, help="whole-job time limit in seconds"),
+    memory_mb: int = typer.Option(512, "--memory-mb", min=64, help="supervised analysis memory budget in MB"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="only print the summary table"),
     export_dir: Optional[Path] = typer.Option(None, "--export-evidence", help="write each incident's evidence packets to DIR/INC-n_kind.pcap (opens in Wireshark)"),
 ):
     """Analyse a capture and print the diagnosis."""
-    from .engine import analyze as run_analysis
+    from .worker import analyze_isolated as run_analysis
 
     if anonymize and export_dir:
         console.print("[bold red]--export-evidence copies the original packets and cannot be combined with --anonymize.[/]")
         raise typer.Exit(2)
     try:
         with console.status("Analysing capture...", spinner="line"):
-            report = run_analysis(capture, _settings(max_mb), anonymize=anonymize)
+            report = run_analysis(capture, _settings(max_mb, timeout, memory_mb), anonymize=anonymize)
     except CaptureError as exc:
         console.print(f"[bold red]Cannot analyse:[/] {escape(str(exc))}")
         raise typer.Exit(2)
@@ -78,7 +81,7 @@ def analyze(
     if export_dir:
         from .report.export import export_evidence
 
-        files = export_evidence(capture, report, export_dir, _settings(max_mb))
+        files = export_evidence(capture, report, export_dir, _settings(max_mb, timeout, memory_mb))
         console.print(f"Evidence for {len(files)} incident(s) written to [bold]{escape(str(export_dir))}[/] (contains original packets: share with care)")
 
 
@@ -117,7 +120,9 @@ def version():
 def _write_private(path: Path, text: str) -> None:
     """Reports can contain network details: create them readable by the owner only where supported."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+        stream.write(text)
     try:
         path.chmod(0o600)
     except OSError:
@@ -133,7 +138,8 @@ def print_report(report: dict, evidence: int = 5, detailed: bool = True) -> None
     head.append(f"{cap['file_name']}", style="bold")
     head.append(f"  {cap['packets']:,} packets, {cap['duration_s']:.1f} s, {cap['format']}\n")
     head.append("Network health: ")
-    head.append(f"{health['score']}/100 {health['grade']}", style=f"bold {GRADE_STYLE.get(health['grade'], 'white')}")
+    score = f"{health['score']}/100" if health['score'] is not None else "Not assessed"
+    head.append(f"{score} {health['grade']}", style=f"bold {GRADE_STYLE.get(health['grade'], 'white')}")
     head.append(f"   {summ['attacks']} attack(s), {summ['faults']} fault(s), {summ['uncertain']} uncertain\n")
     head.append(health["summary"], style="italic")
     gw = report["network"].get("gateway_ip")
@@ -146,7 +152,10 @@ def print_report(report: dict, evidence: int = 5, detailed: bool = True) -> None
         console.print(f"[red]! detector error: {escape(e)}[/]")
 
     if not report["incidents"]:
-        console.print("[green]No problems found.[/]")
+        if report.get("analysis", {}).get("coverage", "complete") == "complete":
+            console.print("[green]No problems found.[/]")
+        else:
+            console.print("[yellow]No conclusive diagnosis. Review the coverage warnings.[/]")
         return
 
     table = Table(show_header=True, header_style="bold", expand=True)
@@ -180,7 +189,7 @@ def _incident_panel(inc: dict, ev_map: dict, n_evidence: int) -> Panel:
         t.append(ex["why"] + "\n\n")
     verdict_word = {"ATTACK": "an attack", "FAULT": "a fault, not an attack", "UNCERTAIN": "uncertain"}[inc["verdict"]]
     t.append(f"Why we think this is {verdict_word} ", style="bold")
-    t.append(f"(confidence {inc['confidence']:.0%})\n", style="dim")
+    t.append(f"(heuristic evidence score {inc['confidence']:.0%}; not a probability)\n", style="dim")
     for e in inc["evidence_for_attack"][:6]:
         t.append("  + ", style="red bold")
         t.append(e["text"] + "\n")

@@ -70,7 +70,7 @@ def _spoof_affects(cause: Symptom, effect: Symptom) -> bool:
 def _spoof_same_device(cause: Symptom, effect: Symptom) -> bool:
     mac = cause.metrics.get("attacker_mac")
     ip = effect.metrics.get("ip")
-    return (mac in _macs(effect)) or (ip in cause.metrics.get("impersonated", {}) and overlaps(cause, effect))
+    return overlaps(cause, effect) and ((mac in _macs(effect)) or ip in cause.metrics.get("impersonated", {}))
 
 
 def _dup_ip_affects(cause: Symptom, effect: Symptom) -> bool:
@@ -78,13 +78,13 @@ def _dup_ip_affects(cause: Symptom, effect: Symptom) -> bool:
 
 
 def _same_ip_conflict(cause: Symptom, effect: Symptom) -> bool:
-    return cause.metrics.get("ip") == effect.metrics.get("ip")
+    return cause.metrics.get("ip") == effect.metrics.get("ip") and overlaps(cause, effect)
 
 
 def _same_path(cause: Symptom, effect: Symptom) -> bool:
     pair = {cause.metrics.get("src"), cause.metrics.get("dst")}
     other = {effect.metrics.get("client"), effect.metrics.get("server")} | {effect.metrics.get("src"), effect.metrics.get("dst")}
-    return len(pair & other) == 2
+    return None not in pair and len(pair & other) == 2 and overlaps(cause, effect)
 
 
 def _mtu_aborts(cause: Symptom, effect: Symptom) -> bool:
@@ -101,7 +101,7 @@ def _dns_slow(cause: Symptom, effect: Symptom) -> bool:
 
 def _rogue_dns(cause: Symptom, effect: Symptom) -> bool:
     rogue = {cause.metrics.get("rogue_server"), *cause.metrics.get("rogue_dns", []), *cause.metrics.get("rogue_mac", [])}
-    return bool({effect.metrics.get("suspect"), effect.metrics.get("claimed_resolver")} & rogue)
+    return bool({effect.metrics.get("suspect"), effect.metrics.get("claimed_resolver")} & rogue) and overlaps(cause, effect)
 
 
 def _scan_refused(cause: Symptom, effect: Symptom) -> bool:
@@ -114,7 +114,7 @@ def _starvation_blocks(cause: Symptom, effect: Symptom) -> bool:
 
 def _starvation_then_rogue(cause: Symptom, effect: Symptom) -> bool:
     senders = set(cause.metrics.get("sent_from", []))
-    return bool(senders & set(effect.metrics.get("rogue_mac", []))) or overlaps(cause, effect, slack=300)
+    return bool(senders & set(effect.metrics.get("rogue_mac", []))) and overlaps(cause, effect, slack=120)
 
 
 def _unreachable_server(cause: Symptom, effect: Symptom) -> bool:

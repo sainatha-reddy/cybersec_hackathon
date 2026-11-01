@@ -3,7 +3,7 @@
 Defences:
 * the format is identified by magic bytes, never by file extension;
 * file size, packet count, packet size and wall-clock time are capped;
-* packets are streamed one at a time (never ``rdpcap``), so memory stays flat;
+* packets are streamed one at a time (never ``rdpcap``), with bounded reads;
 * a packet that fails to decode is counted and skipped, and a damaged or
   truncated file ends the analysis cleanly with a warning instead of a crash;
 * error messages never include stack traces or absolute paths.
@@ -12,6 +12,8 @@ Defences:
 from __future__ import annotations
 
 import os
+import math
+import struct
 import time
 from collections.abc import Iterator
 from pathlib import Path
@@ -33,6 +35,74 @@ MIN_PCAP_BYTES = 24  # global header size
 
 class CaptureError(Exception):
     """A capture file was rejected. The message is safe to show to users."""
+
+
+class BoundedCaptureFile:
+    def __init__(self, path, max_read, deadline):
+        self.stream = Path(path).open("rb")
+        self.max_read = max_read
+        self.deadline = deadline
+        self.truncated = False
+
+    def read(self, size=-1):
+        if time.monotonic() >= self.deadline:
+            raise CaptureError("Capture processing exceeded the time limit.")
+        if size < 0 or size > self.max_read:
+            raise CaptureError("Capture record or pcapng block exceeds the allocation limit.")
+        data = self.stream.read(size)
+        if size and len(data) < size and (data or size > 16):
+            self.truncated = True
+        return data
+
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+
+def _check_framing(path, fmt, stats, settings, deadline):
+    size = path.stat().st_size
+    damaged = False
+    with path.open("rb") as stream:
+        if fmt == "pcap":
+            magic = stream.read(4)
+            endian = "<" if magic[0] in (0xd4, 0x4d) else ">"
+            stream.seek(24)
+        else:
+            endian = "<"
+        while stream.tell() < size:
+            if time.monotonic() >= deadline:
+                raise CaptureError("Capture validation exceeded the time limit.")
+            offset = stream.tell()
+            header = stream.read(16 if fmt == "pcap" else 8)
+            if fmt == "pcap":
+                if len(header) != 16:
+                    damaged = True
+                    break
+                captured = struct.unpack(endian + "IIII", header)[2]
+                if captured > settings.limits.max_packet_bytes or stream.tell() + captured > size:
+                    damaged = True
+                    break
+                stream.seek(captured, 1)
+            else:
+                if len(header) != 8:
+                    damaged = True
+                    break
+                if header[:4] == PCAPNG_MAGIC:
+                    byte_order = stream.read(4)
+                    if byte_order not in (b"\x4d\x3c\x2b\x1a", b"\x1a\x2b\x3c\x4d"):
+                        damaged = True
+                        break
+                    endian = "<" if byte_order[0] == 0x4d else ">"
+                length = struct.unpack(endian + "I", header[4:])[0]
+                if length < 12 or length % 4 or length > settings.limits.max_packet_bytes + 65_536 or offset + length > size:
+                    damaged = True
+                    break
+                stream.seek(offset + length - 4)
+                if stream.read(4) != header[4:]:
+                    damaged = True
+                    break
+    if damaged:
+        stats.truncated = True
+        stats.warnings.append("Capture framing is incomplete or exceeds record limits; results cover readable packets only.")
 
 
 def validate_capture(path: str | os.PathLike, settings: Settings = DEFAULT_SETTINGS) -> str:
@@ -80,13 +150,24 @@ def read_capture(
     stats.file_format = fmt
     stats.file_bytes = p.stat().st_size
 
+    started = time.monotonic()
+    deadline = started + max(0, limits.timeout_seconds)
+    if limits.timeout_seconds <= 0:
+        stats.timed_out = True
+        stats.warnings.append("Analysis stopped at the time limit before any packet was read.")
+        return
+    _check_framing(p, fmt, stats, settings, deadline)
     reader_cls = PcapNgReader if fmt == "pcapng" else PcapReader
+    source = BoundedCaptureFile(p, limits.max_packet_bytes + 65_536, deadline)
     try:
-        reader = reader_cls(str(p))
+        reader = reader_cls(source)
+    except CaptureError:
+        source.close()
+        raise
     except Exception:
+        source.close()
         raise CaptureError(f"{p.name} has a damaged capture header and cannot be opened.") from None
 
-    started = time.monotonic()
     idx = 0
     with reader:
         while True:
@@ -104,6 +185,13 @@ def read_capture(
                 break
             try:
                 pkt = reader.read_packet()
+            except CaptureError as exc:
+                if time.monotonic() >= deadline:
+                    stats.timed_out = True
+                else:
+                    stats.truncated = True
+                stats.warnings.append(str(exc))
+                break
             except EOFError:
                 break
             except Exception:
@@ -126,6 +214,8 @@ def read_capture(
                 continue
             try:
                 rec = decode(idx, pkt)
+                if not math.isfinite(rec.ts) or not 0 <= rec.ts < 253_402_300_800:
+                    raise ValueError("unsupported capture timestamp")
             except Exception:
                 stats.malformed += 1
                 continue
@@ -135,6 +225,10 @@ def read_capture(
                 stats.last_ts = rec.ts
             stats.packets_decoded += 1
             yield rec
+
+    if source.truncated and not stats.truncated:
+        stats.truncated = True
+        stats.warnings.append("The capture contains an incomplete record; results cover readable packets only.")
 
     if stats.malformed:
         stats.warnings.append(f"{stats.malformed:,} malformed packet(s) were skipped.")

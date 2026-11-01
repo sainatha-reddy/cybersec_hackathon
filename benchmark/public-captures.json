@@ -1,0 +1,44 @@
+[
+  {
+    "name": "teardrop.cap",
+    "url": "https://wiki.wireshark.org/uploads/__moin_import__/attachments/SampleCaptures/teardrop.cap",
+    "source": "https://wiki.wireshark.org/SampleCaptures#crack-traces",
+    "allow_attack": true,
+    "required": [
+      {
+        "kind": "fragment_attack",
+        "verdict": "ATTACK"
+      }
+    ],
+    "sha256": "e8e4193ae426dabf549cc103c9e93e7d93c6ae049ee9259f1ce2ebdb7315a683"
+  },
+  {
+    "name": "arp-storm.pcap",
+    "url": "https://wiki.wireshark.org/uploads/__moin_import__/attachments/SampleCaptures/arp-storm.pcap",
+    "source": "https://wiki.wireshark.org/SampleCaptures#arprarp",
+    "allow_attack": false,
+    "required": [
+      {
+        "kind": "arp_storm",
+        "verdict": "FAULT"
+      }
+    ],
+    "sha256": "dc101ea9bfda59f56b54bfb949195c3f169032c045b47f98e6952a86933c1b8d"
+  },
+  {
+    "name": "dhcp.pcap",
+    "url": "https://wiki.wireshark.org/uploads/__moin_import__/attachments/SampleCaptures/dhcp.pcap",
+    "source": "https://wiki.wireshark.org/SampleCaptures",
+    "allow_attack": false,
+    "required": [],
+    "sha256": "2471b5420bdac826eecf8f61a2bbb4a3eb20dbfab7c02ff2be502f349f368214"
+  },
+  {
+    "name": "dns.cap",
+    "url": "https://wiki.wireshark.org/uploads/__moin_import__/attachments/SampleCaptures/dns.cap",
+    "source": "https://wiki.wireshark.org/SampleCaptures",
+    "allow_attack": false,
+    "required": [],
+    "sha256": "041eeb6f98bb398f1ee8b09651b5b5a84f6a62639f95bf226f9e7b77355d9f28"
+  }
+]

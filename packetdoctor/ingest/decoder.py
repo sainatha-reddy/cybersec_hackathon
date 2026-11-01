@@ -155,6 +155,8 @@ def _dns(pkt) -> DnsInfo | None:
         qtype = int(getattr(first, "qtype", 0) or 0)
     answers: list[DnsAnswer] = []
     for rr in list(dns.an or [])[:32]:
+        if int(getattr(rr, "type", 0) or 0) not in (1, 2, 5, 12, 28):
+            continue
         data = getattr(rr, "rdata", None)  # SOA/MX/SRV/... records have no plain rdata
         if data is None:
             continue

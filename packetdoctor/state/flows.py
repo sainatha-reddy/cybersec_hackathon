@@ -100,6 +100,26 @@ class FlowTable:
     def __init__(self, max_flows: int):
         self.flows: LRUDict[tuple, Flow] = LRUDict(max_flows)
         self.total_flows = 0
+        self.retired: list[Flow] = []
+        self.retired_dropped = 0
+        self.flows.on_evict = lambda key, flow: self._archive(flow)
+
+    def _archive(self, flow):
+        relevant = flow.rst_by is not None or flow.handshake_rtt is not None or any(direction.retrans or direction.zero_windows for direction in flow.dirs)
+        if not relevant:
+            return
+        if len(self.retired) >= min(self.flows.maxlen, 20_000):
+            self.retired_dropped += 1
+            return
+        for direction in flow.dirs:
+            direction.segs = {sequence: segment for sequence, segment in direction.segs.items() if segment[0] >= 3 and segment[1] >= 1200}
+            direction.holes.clear()
+            direction.dupacks.clear()
+        self.retired.append(flow)
+
+    def all_flows(self):
+        yield from self.retired
+        yield from self.flows.values()
 
     @staticmethod
     def key(rec: PacketRecord) -> tuple:
@@ -111,6 +131,12 @@ class FlowTable:
         flags = rec.tcp_flags or 0
         key = self.key(rec)
         flow = self.flows.get(key)
+        if flow is not None and flags & TCP_SYN and not flags & TCP_ACK:
+            reused = flow.rst_by is not None or flow.fin_seen or rec.ts - flow.last_ts > 120
+            if reused:
+                self._archive(flow)
+                self.flows.pop(key)
+                flow = None
         new = flow is None
         if new:
             src, dst = (rec.src_ip, rec.sport), (rec.dst_ip, rec.dport)
