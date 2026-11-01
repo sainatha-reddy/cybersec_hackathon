@@ -107,6 +107,13 @@
     }).catch(function () { $("sample-list").textContent = "Samples could not be loaded. Refresh the page or upload your own capture."; });
     fetch("/api/health").then(function (response) { return response.json(); }).then(function (limits) {
       uploadLimit = limits.max_upload_mb * 1024 * 1024;
+      if (limits.hosted) {
+        var pill = $("mode-pill");
+        pill.textContent = "Hosted demo";
+        pill.classList.add("hosted");
+        pill.title = "Captures are uploaded to this demo server, analysed, then deleted";
+        $("footer-note").textContent = "Hosted demo: uploaded captures are analysed on this server and deleted straight after. For sensitive captures, install PacketDoctor and run it on your own computer.";
+      }
       $("limits").textContent = "Upload limit: " + limits.max_upload_mb + " MB · Time limit: " + limits.timeout_seconds + " seconds · Memory budget: " + limits.max_memory_mb + " MB";
     }).catch(function () { $("limits").textContent = "Analysis limits are unavailable. Check that the local server is running."; });
   }

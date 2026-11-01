@@ -1,0 +1,7 @@
+*
+!requirements.lock
+!packetdoctor/
+!samples/
+**/__pycache__
+**/*.pyc
+samples/generate.py

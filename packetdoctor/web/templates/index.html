@@ -18,7 +18,7 @@
           <p class="tagline">Packet capture diagnosis</p>
         </div>
       </div>
-      <span class="offline-pill" title="Captures are analysed on this computer and deleted afterwards">Offline &middot; local only</span>
+      <span class="offline-pill" id="mode-pill" title="Captures are analysed on this computer and deleted afterwards">Offline &middot; local only</span>
       <div class="topbar-actions" id="report-actions" hidden>
         <button type="button" class="btn ghost" id="new-analysis">New analysis</button>
         <button type="button" class="btn ghost" id="download-json">Download JSON</button>
@@ -88,7 +88,7 @@
     <section id="report" hidden></section>
   </main>
 
-  <footer class="footer">PacketDoctor runs offline. No data leaves this computer.</footer>
+  <footer class="footer" id="footer-note">PacketDoctor runs offline. No data leaves this computer.</footer>
   <script src="/static/report.js"></script>
   <script src="/static/app.js"></script>
 </body>

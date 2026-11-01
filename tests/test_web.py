@@ -150,3 +150,18 @@ def test_cli_html_output(samples_dir, tmp_path):
     res = CliRunner().invoke(app, ["analyze", str(samples_dir / "rogue_dhcp.pcap"), "-q", "--html", str(out)])
     assert res.exit_code == 0, res.output
     assert "Rogue DHCP" in out.read_text(encoding="utf-8")
+
+
+def test_hosted_mode_headers_and_health(monkeypatch):
+    monkeypatch.setenv("PACKETDOCTOR_HOSTED", "1")
+    import importlib
+    hosted = importlib.reload(webapp)
+    try:
+        client = TestClient(hosted.app)
+        r = client.get("/")
+        assert "frame-ancestors https://huggingface.co" in r.headers["content-security-policy"]
+        assert "x-frame-options" not in r.headers
+        assert client.get("/api/health").json()["hosted"] is True
+    finally:
+        monkeypatch.delenv("PACKETDOCTOR_HOSTED")
+        importlib.reload(webapp)

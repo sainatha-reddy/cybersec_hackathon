@@ -41,6 +41,10 @@ CHUNK = 1024 * 1024
 SETTINGS = Settings(limits=Limits(max_file_bytes=MAX_UPLOAD, timeout_seconds=180))
 _jobs = {}
 MAX_JOBS = 2
+# Hosted demo mode (e.g. a Hugging Face Space): captures travel to the server, so the
+# UI says so, and the Space page on huggingface.co is allowed to embed the app.
+HOSTED = os.environ.get("PACKETDOCTOR_HOSTED", "").lower() in ("1", "true", "yes")
+FRAME_ANCESTORS = "https://huggingface.co" if HOSTED else "'none'"
 
 
 class UploadGuard:
@@ -81,7 +85,7 @@ class UploadGuard:
 
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
-    "connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    "connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors " + FRAME_ANCESTORS
 )
 
 @asynccontextmanager
@@ -107,7 +111,8 @@ async def security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["Content-Security-Policy"] = CSP
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
+    if not HOSTED:
+        response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
@@ -129,7 +134,7 @@ async def index():
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "version": __version__, "max_upload_mb": MAX_UPLOAD_MB, "timeout_seconds": SETTINGS.limits.timeout_seconds, "max_memory_mb": SETTINGS.limits.max_memory_mb}
+    return {"status": "ok", "version": __version__, "max_upload_mb": MAX_UPLOAD_MB, "timeout_seconds": SETTINGS.limits.timeout_seconds, "max_memory_mb": SETTINGS.limits.max_memory_mb, "hosted": HOSTED}
 
 
 @app.get("/api/samples")
