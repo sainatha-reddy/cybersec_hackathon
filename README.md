@@ -4,7 +4,9 @@
 
 > Network track: *Diagnosing Network Problems from Packet Captures*. Cybersecurity Hackathon, IIITDM Kancheepuram, 31 Oct to 1 Nov 2026.
 
-**Demo video:** _add the public link here before submitting_
+**Live demo:** https://cybersec-hackathon-nna4.onrender.com/
+
+**Demo video:** https://drive.google.com/drive/folders/1683sy8nyZZu2u0XiArt7F_M8CqQIWJRz?usp=sharing
 
 ---
 
@@ -24,7 +26,7 @@ PacketDoctor treats a capture the way a doctor treats a patient:
 | **Prescription** | Beginner-friendly explanation: what happened, why it matters, the likely cause, and numbered steps to fix it. |
 | **Health score** | A 0–100 score for observed traffic, with separate complete, partial, and insufficient-data status. Empty or unusable captures are not rated healthy. |
 
-It runs **fully offline**: no cloud, no AI service, no API keys. Captures never leave the machine.
+The CLI and locally run dashboard analyse captures on your own computer, without an AI service or API keys. The [hosted demo](https://cybersec-hackathon-nna4.onrender.com/) runs the same analysis on Render; files you upload there are sent to that server.
 
 ### What makes it different from existing tools
 
@@ -71,9 +73,37 @@ See [completed improvements and verification](docs/HACKATHON_IMPROVEMENTS.md) fo
 
 - **CLI** with colour output: summary table, a panel per incident, evidence packets, `--json` and `--html` export.
 - **Wireshark hand-off.** Every incident carries two display filters: one for the traffic pattern, and one (`frame.number in {...}`) selecting exactly the cited packets. `--export-evidence DIR` writes each incident's packets to its own small `.pcap`. Only the filter text is generated; Wireshark is never run or required.
-- **Local web dashboard**: drag-and-drop upload, health gauge, interactive timeline (click a bar to jump to its explanation), incident cards with clue meters, cause-and-effect chain, evidence tables, filters, and downloads.
+- **Web dashboard** (local or hosted): drag-and-drop upload, health gauge, interactive timeline (click a bar to jump to its explanation), incident cards with clue meters, cause-and-effect chain, evidence tables, filters, and downloads.
 - **Standalone HTML report**: one offline file you can email. It contains a strict Content Security Policy and loads nothing from the network.
-- **Anonymise mode** (`--anonymize` or a checkbox): IPs and MACs are replaced by keyed-hash pseudonyms before anything is shown or saved.
+- **Anonymise mode** (`--anonymize` or a checkbox): IPs and MACs in the report are replaced by keyed-hash pseudonyms. Original capture files are not modified.
+
+---
+
+## Try the dashboard
+
+1. Open the [Render demo](https://cybersec-hackathon-nna4.onrender.com/) or run `packetdoctor serve` and open `http://127.0.0.1:8000`. The free Render instance may take a minute to wake after inactivity.
+2. Select the featured **mixed_fault_and_attack.pcap** sample for the showcase: a DNS outage, a port scan and an ARP-spoofing attack in one capture. You can also choose another bundled sample or upload a `.pcap`/`.pcapng` file. For private captures, use the local dashboard or CLI.
+3. Optionally turn on **Hide IP and MAC addresses** before analysis. This pseudonymises addresses in the report; on the hosted demo, the original capture still has to be uploaded for analysis.
+4. Wait for analysis to finish, or cancel it. The dashboard shows progress and then the health score, coverage status and incident timeline. Open an incident to read its **FAULT**, **ATTACK** or **UNCERTAIN** verdict, supporting clues, likely cause, suggested first action and cited packets. Use the filters and timeline to move been incidents.
+5. Download the JSON or standalone HTML report, or choose **New analysis**. The HTML report opens without a server or network connection.
+
+**Wake the hosted demo:** Render's free service sleeps after about 15 minutes without traffic. Before presenting, send a request to the health endpoint and allow up to a minute for the first response:
+
+```bash
+# macOS / Linux
+curl --max-time 120 -fsS https://cybersec-hackathon-nna4.onrender.com/api/health
+```
+
+```powershell
+# Windows PowerShell
+Invoke-RestMethod -Uri https://cybersec-hackathon-nna4.onrender.com/api/health -TimeoutSec 120
+```
+
+An `"status": "ok"` response means the app is ready. Opening the live demo URL also wakes it; these commands do not keep it awake indefinitely.
+
+**Hosted demo limits:** uploads are capped at 50 MB, each analysis has a 180-second deadline and a 512 MB worker memory budget, and at most two analyses run at once. The free instance has 512 MB of total RAM, so large captures or concurrent jobs may exhaust it. Uploaded files are removed after processing or cancellation; reports are kept briefly in memory and expire after two minutes.
+
+For a terminal workflow, install the project below, run `packetdoctor analyze samples/mixed_fault_and_attack.pcap`, then add `--json report.json --html report.html` to save reports. Use `--anonymize` to pseudonymise reported addresses; `--export-evidence DIR` instead saves original evidence packets for Wireshark and cannot be combined with anonymisation.
 
 ---
 
@@ -127,7 +157,7 @@ pytest
 
 140 tests cover the supplied scenarios and regressions including IPv6 privacy, DNS/fragment identifier reuse, extreme timestamps, truncated framing and partial coverage, causal timing, TCP tuple reuse, retained evidence across flow eviction, state budgets, worker memory/cancellation/deadlines, background-job admission and cleanup, streamed upload limits, and benchmark scoring. The suite also covers benign look-alikes, malformed captures, CLI/API behaviour, safe rendering, and the repository's secret-pattern check.
 
-The lock file pins the runtime and test dependency graph used for evaluation. A first-time installation needs internet access; analysis is offline. If an existing virtual environment points to a Python installation that has been moved or removed, create a new environment with an installed Python rather than copying that environment between machines.
+The lock file pins the runtime and test dependency graph used for evaluation. A first-time installation needs internet access; local analysis runs offline. If an existing virtual environment points to a Python installation that has been moved or removed, create a new environment with an installed Python rather than copying that environment between machines.
 
 The wheel includes the 17 synthetic examples as well as the dashboard assets. `packetdoctor samples` lists their installed locations. Source checkouts can use the relative `samples/` commands above.
 
@@ -238,8 +268,8 @@ The full details are in [SECURITY.md](SECURITY.md). In short:
 
 - **Untrusted input.** The file type is identified by magic bytes, never by extension. File size, packet count, packet size and wall-clock time are all capped. Captures are streamed, never loaded whole. A malformed packet is skipped and counted; a truncated or corrupt file ends the analysis cleanly. All of this is fuzz-tested.
 - **Resource budgets.** Shared collection budgets stop analysis with a partial-result warning, and LRU evictions are disclosed. CLI and web analysis run in supervised subprocesses with whole-job deadlines, cancellation, and a monitored memory budget. Linux additionally applies an address-space limit where available. pcapng block reads are bounded before allocation.
-- **Privacy.** Reports retain selected header metadata, not application payload bytes. Nothing is sent anywhere during analysis. IPv4, IPv6, and MAC addresses are pseudonymised consistently with a random per-run key; DNS names and other context remain. Evidence-pcap export deliberately preserves original bytes and cannot be combined with anonymisation.
-- **Web dashboard.** It binds to 127.0.0.1 by default. Request bytes and admission are bounded before multipart parsing; copied uploads also have a file-size cap. Two analysis slots are available without an unbounded queue. Uploads are removed after processing or cancellation. Results are held briefly in memory and expire after two minutes, or are released after download to the page. Samples use an allow-list. Strict CSP, framing, MIME, and no-store headers are set, and API docs are disabled.
+- **Privacy.** Reports retain selected header metadata, not application payload bytes. Local CLI and dashboard analysis do not send captures elsewhere; the hosted demo receives uploaded captures. With anonymisation enabled, IPv4, IPv6, and MAC addresses are pseudonymised consistently with a random per-run key in the report; DNS names and other context remain. Anonymisation does not change the original uploaded file. Evidence-pcap export deliberately preserves original bytes and cannot be combined with anonymisation.
+- **Web dashboard.** Local `packetdoctor serve` binds to 127.0.0.1 by default; the Docker deployment is publicly accessible through Render. Request bytes and admission are bounded before multipart parsing; copied uploads also have a file-size cap. Two analysis slots are available without an unbounded queue. Uploads are removed after processing or cancellation. Results are held briefly in memory and expire after two minutes, or are released after download to the page. Samples use an allow-list. Strict CSP, framing, MIME, and no-store headers are set, and API docs are disabled.
 - **No injection.** Strings from packets (DNS names and so on) are stripped of control characters, so they can't hijack terminals. The browser renderer uses `textContent` only, never `innerHTML` (enforced by a test). JSON embedded in HTML reports is escaped so it cannot close its `<script>` tag (tested with a hostile payload).
 - **Audit evidence.** A test scans tracked files for secret patterns. The exact dependency set is in `requirements.lock`; audit output is recorded in `docs/dependency-audit.json`. These checks have a defined scope and date, rather than proving the absence of every possible vulnerability.
 
@@ -253,6 +283,7 @@ The full details are in [SECURITY.md](SECURITY.md). In short:
 - **Encrypted traffic.** Application-layer problems inside encrypted traffic (TLS/QUIC) are out of scope; the tool diagnoses the network layers below.
 - **Vantage point matters.** Relay detection needs a capture point (mirror/SPAN port or the victim itself) that sees both legs of the relayed traffic.
 - **Thresholds.** These live in `packetdoctor/config.py` and are tuned for small networks.
+- **Hosted capacity.** Render's free 512 MB instance may sleep between visits and may run out of memory on large or concurrent analyses. Use a local install for sensitive or larger captures.
 
 ---
 
@@ -261,7 +292,7 @@ The full details are in [SECURITY.md](SECURITY.md). In short:
 | Library | Licence | Used for |
 |---|---|---|
 | [Scapy](https://scapy.net) | GPL-2.0 | Reading pcap/pcapng and dissecting headers (also used by the sample generator) |
-| [FastAPI](https://fastapi.tiangolo.com) + [Starlette](https://www.starlette.io) | MIT / BSD-3 | Local web dashboard API |
+| [FastAPI](https://fastapi.tiangolo.com) + [Starlette](https://www.starlette.io) | MIT / BSD-3 | Web dashboard API |
 | [Uvicorn](https://www.uvicorn.org) | BSD-3 | ASGI server for the dashboard |
 | [python-multipart](https://github.com/Kludex/python-multipart) | Apache-2.0 | File-upload parsing |
 | [Typer](https://typer.tiangolo.com) | MIT | Command-line interface |
