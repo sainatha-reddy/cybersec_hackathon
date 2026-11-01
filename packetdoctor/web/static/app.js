@@ -7,6 +7,7 @@
   var controller = null;
   var activeJob = null;
   var uploadLimit = null;
+  var LOGO = "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path d=\"M2 12h4l2.5-6 4 12 3-9 1.5 3H22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>";
 
   function show(view) {
     $("upload-view").hidden = view !== "upload";
@@ -91,8 +92,15 @@
         var words = s.name.replace(/\.pcap(ng)?$/, "").split("_").map(function (w, i) {
           return acronyms[w] || (i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w);
         });
-        b.textContent = words.join(" ") + (/\.pcapng$/.test(s.name) ? " (pcapng)" : "");
-        b.title = s.name + " (" + s.kb + " KB)";
+        var name = document.createElement("span");
+        name.className = "sample-name";
+        name.textContent = words.join(" ");
+        var meta = document.createElement("span");
+        meta.className = "sample-meta";
+        meta.textContent = (/\.pcapng$/.test(s.name) ? "pcapng" : "pcap") + " · " + s.kb + " KB";
+        b.appendChild(name);
+        b.appendChild(meta);
+        b.title = "Analyse " + s.name;
         b.addEventListener("click", function () { request("/api/analyze-sample/" + encodeURIComponent(s.name), anonymizeForm()); });
         box.appendChild(b);
       });
@@ -127,7 +135,7 @@
       "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
       "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:\">" +
       "<title>" + title + "</title><style>" + res[0] + "</style></head><body class=\"standalone\">" +
-      "<header class=\"topbar\"><div class=\"brand\"><span class=\"logo\">+</span><div><h1>PacketDoctor</h1><p class=\"tagline\">Offline network diagnosis report</p></div></div></header>" +
+      "<header class=\"topbar\"><div class=\"brand\"><span class=\"logo\">" + LOGO + "</span><div><h1>PacketDoctor</h1><p class=\"tagline\">Offline network diagnosis report</p></div></div></header>" +
       "<main><section id=\"report\"></section></main>" +
       "<script type=\"application/json\" id=\"report-data\">" + data + "</script>" +
       "<script>" + res[1].replace(/<\//g, "<\\/") + "\nPacketDoctor.renderReport(JSON.parse(document.getElementById('report-data').textContent), document.getElementById('report'));</script>" +

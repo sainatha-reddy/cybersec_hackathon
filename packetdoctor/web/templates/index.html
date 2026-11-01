@@ -10,44 +10,79 @@
   <a class="skip-link" href="#main">Skip to diagnosis</a>
   <p id="status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
   <header class="topbar">
-    <div class="brand">
-      <span class="logo" aria-hidden="true">+</span>
-      <div>
-        <h1>PacketDoctor</h1>
-        <p class="tagline">Finds faults and attacks in packet captures and explains them in plain language</p>
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 12h4l2.5-6 4 12 3-9 1.5 3H22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div>
+          <h1>PacketDoctor</h1>
+          <p class="tagline">Packet capture diagnosis</p>
+        </div>
       </div>
-    </div>
-    <div class="topbar-actions" id="report-actions" hidden>
-      <button type="button" class="btn ghost" id="new-analysis">New analysis</button>
-      <button type="button" class="btn ghost" id="download-json">Download JSON</button>
-      <button type="button" class="btn" id="download-html">Download report</button>
+      <span class="offline-pill" title="Captures are analysed on this computer and deleted afterwards">Offline &middot; local only</span>
+      <div class="topbar-actions" id="report-actions" hidden>
+        <button type="button" class="btn ghost" id="new-analysis">New analysis</button>
+        <button type="button" class="btn ghost" id="download-json">Download JSON</button>
+        <button type="button" class="btn" id="download-html">Download report</button>
+      </div>
     </div>
   </header>
 
   <main id="main" tabindex="-1">
     <section id="upload-view" class="upload-view">
-      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose a capture file">
-        <div class="drop-icon" aria-hidden="true">&#8681;</div>
-        <p class="drop-title">Drop a .pcap or .pcapng file here</p>
-        <p class="muted">or click to choose a file. It is analysed on this computer and deleted straight after.</p>
-        <input type="file" id="file-input" accept=".pcap,.pcapng,.cap" hidden>
+      <div class="intro">
+        <p class="eyebrow">Faults and attacks, explained</p>
+        <h2 class="intro-title">Find out what went wrong on the network</h2>
+        <p class="intro-lead">Open a Wireshark or tcpdump capture. PacketDoctor separates ordinary faults from deliberate attacks, shows the evidence packet by packet, and tells you what to fix first.</p>
       </div>
-      <label class="check"><input type="checkbox" id="anonymize"> Hide IP and MAC addresses in the results (anonymise)</label>
-      <p class="small muted" id="limits">Reading local analysis limits…</p>
-      <p class="small muted">Address hiding covers IPv4, IPv6 and MAC addresses. DNS names and other context remain.</p>
-      <div class="samples">
-        <h2>No capture at hand? Try a sample</h2>
-        <div id="sample-list" class="sample-list"></div>
+
+      <div class="upload-grid">
+        <div class="upload-main">
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose a capture file">
+            <span class="drop-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <p class="drop-title">Drop a capture file here</p>
+            <p class="drop-sub">or <span class="link-like">browse your computer</span></p>
+            <p class="drop-formats"><span>.pcap</span><span>.pcapng</span><span>.cap</span></p>
+            <input type="file" id="file-input" accept=".pcap,.pcapng,.cap" hidden>
+          </div>
+          <div class="options">
+            <label class="check"><input type="checkbox" id="anonymize"> <span><strong>Hide IP and MAC addresses</strong><span class="check-sub">Replaces IPv4, IPv6 and MAC addresses with stable pseudonyms. DNS names and other context remain.</span></span></label>
+            <p class="limits" id="limits">Reading local analysis limits…</p>
+          </div>
+          <p class="error" id="error" role="alert" tabindex="-1" hidden></p>
+          <section class="checks" aria-labelledby="checks-title">
+            <h2 id="checks-title" class="checks-title">What PacketDoctor checks</h2>
+            <div class="check-group">
+              <h3><span class="kind-dot kind-fault" aria-hidden="true"></span>Faults</h3>
+              <p>DNS failures, DHCP failures, TCP resets and retransmissions, high latency, MTU black holes, unreachable hosts, ARP storms, duplicate IPs, ARP conflicts</p>
+            </div>
+            <div class="check-group">
+              <h3><span class="kind-dot kind-attack" aria-hidden="true"></span>Attacks</h3>
+              <p>ARP spoofing, DNS hijacking, port scans, rogue DHCP servers, suspicious IP fragmentation</p>
+            </div>
+            <div class="check-group">
+              <h3><span class="kind-dot kind-uncertain" aria-hidden="true"></span>Uncertain</h3>
+              <p>When the clues point both ways, the case is flagged for a person to review instead of guessed</p>
+            </div>
+          </section>
+        </div>
+
+        <aside class="samples" aria-labelledby="samples-title">
+          <h2 id="samples-title">Try a sample capture</h2>
+          <p class="samples-sub">Each one reproduces a real problem. Start with the mixed capture.</p>
+          <div id="sample-list" class="sample-list"></div>
+        </aside>
       </div>
-      <p class="error" id="error" role="alert" tabindex="-1" hidden></p>
+
     </section>
 
     <section id="loading" class="loading" hidden>
-      <div class="spinner" aria-hidden="true"></div>
-      <h2 id="loading-title" tabindex="-1">Examining packets…</h2>
-      <p id="progress">Uploading and preparing analysis…</p>
-      <p class="muted small">Elapsed time is shown while analysis runs. Large captures may reach the displayed time or memory limit.</p>
-      <button type="button" class="btn ghost" id="cancel-analysis">Cancel analysis</button>
+      <div class="loading-card">
+        <div class="progress-track" aria-hidden="true"><span class="progress-bar"></span></div>
+        <h2 id="loading-title" tabindex="-1">Examining packets…</h2>
+        <p id="progress">Uploading and preparing analysis…</p>
+        <p class="muted small">Large captures may reach the time or memory limit shown on the upload page.</p>
+        <button type="button" class="btn ghost" id="cancel-analysis">Cancel analysis</button>
+      </div>
     </section>
 
     <section id="report" hidden></section>
